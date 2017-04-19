@@ -25,77 +25,45 @@ registerDoParallel(cl)
 source('./KSSM0211_read-basefcst_v01.R')
 
 #===========================================
-# Optimisation functions
+# Desvcalc functions
 #===========================================
-cus_grouping_A <- function(wv42){
-  if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
-    fv01   <- (wv42 %*% (wm01_4D1[,(in_sample_ini):(event_horizon)])) / sum(wv42)
-    fv02   <- decompose(msts(fv01[1,],seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)))
-    fv03   <- fv02$random
-    randev <- sd(fv03,na.rm=TRUE)
-  } else {randev <- 10}#abs(sum(wv42*wv45))+1}
-  return(randev)
+cus_grouping_B <- function(wv42){
+  fv01   <- (wv42 %*% (wm01_4D1[,(in_sample_ini):(event_horizon)])) / sum(wv42)
+  fv02   <- decompose(msts(fv01[1,],seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)))
+  fv03   <- fv02$random
+  randev <- sd(fv03,na.rm=TRUE)
 }
 
 #===========================================
-# Optimisation Parameters & Conf
+# Random Grouping
 #===========================================
 opt_ahead_t   = 1
 opt_win_sel   = 1
 opt_hrz_sel   = 2
 frontierstp   = 20
+rndsim_size   = 1000
 
-# Parameter Bundle
-optgrppar     = c(opt_ahead_t,opt_win_sel,opt_hrz_sel,frontierstp)
-
-# Optimisation Config
-event_horizon = data_size*in_sample_fr+1 + hrz_lim[opt_hrz_sel]
-in_sample_ini = event_horizon - event_horizon %/% s02 * s02 + 1
-outsample_end = (data_size*(1-in_sample_fr)) %/% s02 * s02 + event_horizon - s02 - (hrz_lim[opt_hrz_sel]%/%s02*s02)
-in_sample_siz = event_horizon - in_sample_ini + 1
-outsample_siz = outsample_end - event_horizon
-inosample_siz = in_sample_siz + outsample_siz
-event_hrz_mod = event_horizon - in_sample_ini + 1
-
-wv42          = cus_list * 0
-wv43          = cus_list * 0
-for (j in cus_list){
-  wv43[j] = fcst_4D1[[opt_hrz_sel]][[j]][opt_win_sel,opt_ahead_t]
+rndgrp = matrix(nrow=rndsim_size,ncol=4)
+rndgrp_plt <- foreach (i = 1:9, .packages=c("forecast"), .combine=c("rbind")) %dopar%{
+  for (j in 1:rndsim_size){
+    rndgrp_pll = (runif(length(cus_list))<=(i/10))+0
+    rndgrp[j,1] = sum(rndgrp_pll*wv45)
+    rndgrp[j,2] = cus_grouping_B(rndgrp_pll)
+    rndgrp[j,3] = sum(rndgrp_pll)
+  }
+  rndgrp
 }
-wv44          = wm02_4D1[[opt_hrz_sel]][,opt_ahead_t]
-wv45          = wv43+wv44                          # demand forecast for opt selection
+rndgrp_pltres = matrix(nrow=frontierstp,ncol=3)
 wv46          = seq(0,sum(wv45),sum(wv45)/frontierstp)
 
-#===========================================
-# Optimisation Run
-#===========================================
-optgrp_pll <- foreach (i = 1:frontierstp,
-                       .packages=c("forecast","rgenoud"),
-                       .combine=c("rbind")) %dopar%{
-  opt_min_cusd  = wv46[i]
-  opt_max_cusd  = wv46[i+1]
-  optgrp   <- genoud(cus_grouping_A, nvars=length(cus_list), max.generations=300, wait.generations=20,
-                     starting.values=c(rep(1,length(cus_list))),
-                     Domains = cbind(c(rep(0,length(cus_list))),c(rep(1,length(cus_list)))),
-                     data.type.int=TRUE,  int.seed=1,
-                     print.level=1)
-  cat("\n\n\n----------------------------------------\nSTEPWISE FRONTIER ",i," OF ",frontierstp,"\n----------------------------------------")
-  optgrp$par
-}
-
-optgrp_plt = matrix(nrow=frontierstp,ncol=3)
 for (i in 1:frontierstp){
-  opt_min_cusd  = wv46[i]
-  opt_max_cusd  = wv46[i+1]
-  optgrp_plt[i,1] = sum(optgrp_pll[i,]*wv45)
-  optgrp_plt[i,2] = cus_grouping_A(optgrp_pll[i,])
-  optgrp_plt[i,3] = sum(optgrp_pll[i,])
+  rndgrp_pltres[i,] = colMeans(rndgrp_plt[(rndgrp_plt[,1]>wv46[i]&rndgrp_plt[,1]<wv46[i+1]),])
 }
 
-print(proc.time() - ptm)        # Stop the clock
-
-#===========================================
-# Outputs
-#===========================================
-saveRDS(list(optgrp_pll,optgrp_plt), file="0300_optgrp_h2.rds")
-saveRDS(optgrppar,                   file="0300_optpar_h2.rds")
+plot(range(1:5/100),range(0:round(sum(wv45))), bty="n", type="n", xlab=paste("stdev of noise after decompose"),
+     ylab="Mean Demand",main=paste("optimum vs random groups"))
+grid (NA,NULL, lty = 'dotted')
+points(optgrp_plt[2:20,2],optgrp_plt[2:20,1],col="green",pch=19)
+points(rndgrp_pltres[1:20,2],rndgrp_pltres[1:20,1],col="red",pch=19)
+legend('topright', inset=c(-0.10,0), legend = c("random","optimum"),
+       lty=1, col=c("red","green"), bty='n', cex=.75, title="Groups")
