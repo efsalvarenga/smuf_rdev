@@ -15,12 +15,12 @@
 # Libraries, Inputs
 #===========================================
 source('./KSSM0211_read-basefcst_v01.R')
-optgrp_pll   <- readRDS("0300_optgrp.rds")[[1]]
-optgrp_plt   <- readRDS("0300_optgrp.rds")[[2]]
-opt_ahead_t  <- readRDS("0300_optpar.rds")[1]
-opt_win_sel  <- readRDS("0300_optpar.rds")[2]
-opt_hrz_sel  <- readRDS("0300_optpar.rds")[3]
-frontierstp  <- readRDS("0300_optpar.rds")[4]
+optgrp_pll   <- readRDS("0300_optgrp_h2.rds")[[1]]
+optgrp_plt   <- readRDS("0300_optgrp_h2.rds")[[2]]
+opt_ahead_t  <- readRDS("0300_optpar_h2.rds")[1]
+opt_win_sel  <- readRDS("0300_optpar_h2.rds")[2]
+opt_hrz_sel  <- readRDS("0300_optpar_h2.rds")[3]
+frontierstp  <- readRDS("0300_optpar_h2.rds")[4]
 
 #===========================================
 # Groups Demand Calculation
@@ -39,4 +39,4 @@ print(proc.time() - ptm)        # Stop the clock
 #===========================================
 # Outputs
 #===========================================
-saveRDS(crpsh_CLU_opt, file="0320_analysis.rds")
+saveRDS(crpsh_CLU_opt, file="0320_analysis_h2.rds")

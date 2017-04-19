@@ -42,7 +42,7 @@ wm22_optgmean = matrix(nrow=optg_lists,ncol=5)
 wm22_optgdesv = matrix(nrow=optg_lists,ncol=5)
 for (i in 2:optg_lists) {
   wm22_optgmean[i,1] = crpsh_CLU_opt[[i]][[1]][1]
-  wm22_optgmean[i,2] = ahead_t[opt_ahead_t]
+  wm22_optgmean[i,2] = 12
   wm22_optgmean[i,3] = optgrp_plt[i,1]
   wm22_optgmean[i,4] = optgrp_plt[i,2]
   wm22_optgmean[i,5] = optgrp_plt[i,3]
@@ -63,6 +63,10 @@ for (i in 1:(length(sim_cus_clu))){
 points(wm22_optgmean[,2],wm22_optgmean[,1],col="red",pch=19)
 legend('topright', inset=c(-0.10,0), legend = c(sim_cus_clu),
        lty=1, col=rainbow(length(sim_cus_clu)), bty='n', cex=.75, title="Groups")
+ 
+# points(wm22_optgmean_bkp[,2],wm22_optgmean_bkp[,1],col="red",pch=19)
+# legend('topright', inset=c(-0.10,0), legend = c(sim_cus_clu),
+#        lty=1, col=rainbow(length(sim_cus_clu)), bty='n', cex=.75, title="Groups")
 
 plot(wm22_optgmean[,5],wm22_optgmean[,1],main=paste("CRPS vs #customer in group"))
 plot(wm22_optgmean[,5],wm22_optgmean[,4],main=paste("sdev vs #customer in group"))
