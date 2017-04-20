@@ -41,10 +41,10 @@ opt_ahead_t   = 1
 opt_win_sel   = 1
 opt_hrz_sel   = 2
 frontierstp   = 20
-rndsim_size   = 1000
+rndsim_size   = 100
 
-rndgrp = matrix(nrow=rndsim_size,ncol=4)
-rndgrp_plt <- foreach (i = 1:9, .packages=c("forecast"), .combine=c("rbind")) %dopar%{
+rndgrp = matrix(nrow=rndsim_size,ncol=3)
+rndgrp_plt <- foreach (i = 1:10, .packages=c("forecast"), .combine=c("rbind")) %dopar%{
   for (j in 1:rndsim_size){
     rndgrp_pll = (runif(length(cus_list))<=(i/10))+0
     rndgrp[j,1] = sum(rndgrp_pll*wv45)
@@ -57,6 +57,7 @@ rndgrp_pltres = matrix(nrow=frontierstp,ncol=3)
 wv46          = seq(0,sum(wv45),sum(wv45)/frontierstp)
 
 for (i in 1:frontierstp){
+  print(i)
   rndgrp_pltres[i,] = colMeans(rndgrp_plt[(rndgrp_plt[,1]>wv46[i]&rndgrp_plt[,1]<wv46[i+1]),])
 }
 
@@ -64,6 +65,6 @@ plot(range(1:5/100),range(0:round(sum(wv45))), bty="n", type="n", xlab=paste("st
      ylab="Mean Demand",main=paste("optimum vs random groups"))
 grid (NA,NULL, lty = 'dotted')
 points(optgrp_plt[2:20,2],optgrp_plt[2:20,1],col="green",pch=19)
-points(rndgrp_pltres[1:20,2],rndgrp_pltres[1:20,1],col="red",pch=19)
+points(rndgrp_pltres[2:20,2],rndgrp_pltres[2:20,1],col="red",pch=19)
 legend('topright', inset=c(-0.10,0), legend = c("random","optimum"),
        lty=1, col=c("red","green"), bty='n', cex=.75, title="Groups")
