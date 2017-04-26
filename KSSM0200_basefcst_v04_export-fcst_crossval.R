@@ -10,6 +10,7 @@
 # Notes
 # 11/04 Modular implemented
 # 15/04 Saves forecasts and data for later use
+# 26/04 Cross validation and seasonal bloc
 #===========================================
 
 #===========================================
@@ -34,12 +35,14 @@ data_size     = data_size
 
 # New parameters
 cus_list      = seq(1,20)
-cus_clu       = c(10,20)
+cus_clu       = c() #c(10,20)
 wm01_01       = wm01_00[min(cus_list):length(cus_list),]
 win_size      = c(4,24)
 ahead_t       = seq(1, (24/sum_of_h))
 hrz_lim       = c(0) #seq(0,(150/sum_of_h)) * 23
 in_sample_fr  = 2/3           # Fraction for diving in- and out-sample
+crossvalsize  = 1/4           # Part of end of in_sample_fr for cross validation
+seas_bloc_ws  = 1000          # Number of weeks used for calculating seasonality pattern
 sampling      = 1024          # For monte-carlo CRPS calculation
 
 # Parameter Bundle
@@ -83,7 +86,7 @@ kdscrps <- function(wm01_4D, hrz_lim, win_size, ahead_t, sampling){
       # wm03 out-sample load data
       # wm04 in- and out-sample de-seasonalised
       event_horizon = data_size*in_sample_fr+1 + h
-      in_sample_ini = event_horizon - event_horizon %/% s02 * s02 + 1
+      in_sample_ini = event_horizon - min(seas_bloc_ws,(event_horizon %/% s02)) * s02 + 1
       outsample_end = (data_size*(1-in_sample_fr)) %/% s02 * s02 + event_horizon - s02 - (h%/%s02*s02)
       in_sample_siz = event_horizon - in_sample_ini + 1
       outsample_siz = outsample_end - event_horizon

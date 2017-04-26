@@ -63,10 +63,6 @@ for (i in 1:(length(sim_cus_clu))){
 points(wm22_optgmean[,2],wm22_optgmean[,1],col="red",pch=19)
 legend('topright', inset=c(-0.10,0), legend = c(sim_cus_clu),
        lty=1, col=rainbow(length(sim_cus_clu)), bty='n', cex=.75, title="Groups")
- 
-points(wm22_optgmean_bkp[,2],wm22_optgmean_bkp[,1],col="red",pch=19)
-legend('topright', inset=c(-0.10,0), legend = c(sim_cus_clu),
-       lty=1, col=rainbow(length(sim_cus_clu)), bty='n', cex=.75, title="Groups")
 
 # plot(wm22_optgmean[,5],wm22_optgmean[,1],main=paste("CRPS vs #customer in group"))
 # plot(wm22_optgmean[,5],wm22_optgmean[,4],main=paste("sdev vs #customer in group"))

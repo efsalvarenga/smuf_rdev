@@ -42,8 +42,8 @@ cus_grouping_A <- function(wv42){
 #===========================================
 opt_ahead_t   = 1
 opt_win_sel   = 1
-opt_hrz_sel   = 2
-frontierstp   = 10
+opt_hrz_sel   = 1
+frontierstp   = 5
 
 # Parameter Bundle
 optgrppar     = c(opt_ahead_t,opt_win_sel,opt_hrz_sel,frontierstp)
@@ -78,7 +78,7 @@ optgrp_pll <- foreach (i = 1:frontierstp,
                      starting.values=c(rep(1,length(cus_list))),
                      Domains = cbind(c(rep(0,length(cus_list))),c(rep(1,length(cus_list)))),
                      data.type.int=TRUE,  int.seed=1,
-                     print.level=1)
+                     print.level=0)
   cat("\n\n\n----------------------------------------\nSTEPWISE FRONTIER ",i," OF ",frontierstp,"\n----------------------------------------")
   optgrp$par
 }
@@ -97,5 +97,5 @@ print(proc.time() - ptm)        # Stop the clock
 #===========================================
 # Outputs
 #===========================================
-saveRDS(list(optgrp_pll,optgrp_plt), file="0300_optgrp_h2.rds")
-saveRDS(optgrppar,                   file="0300_optpar_h2.rds")
+saveRDS(list(optgrp_pll,optgrp_plt), file="0300_optgrp.rds")
+saveRDS(optgrppar,                   file="0300_optpar.rds")
