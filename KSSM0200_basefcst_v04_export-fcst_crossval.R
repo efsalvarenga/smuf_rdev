@@ -35,13 +35,13 @@ data_size     = data_size
 
 # New parameters
 cus_list      = seq(1,20)
-cus_clu       = c() #c(10,20)
+cus_clu       = c(15) #c(10,20)
 wm01_01       = wm01_00[min(cus_list):length(cus_list),]
 win_size      = c(4,24)
 ahead_t       = seq(1, (24/sum_of_h))
 hrz_lim       = c(0) #seq(0,(150/sum_of_h)) * 23
 in_sample_fr  = 2/3           # Fraction for diving in- and out-sample
-crossvalsize  = 1/4           # Part of end of in_sample_fr for cross validation
+crossvalsize  = 1             # Number of weeks in the end of in_sample used for crossvalidation
 seas_bloc_ws  = 1000          # Number of weeks used for calculating seasonality pattern
 sampling      = 1024          # For monte-carlo CRPS calculation
 
@@ -66,9 +66,9 @@ wm01_4Dc <- foreach (c = cus_clu) %dopar% {
 wm01_4D    = c(list(wm01_01),wm01_4Dc)
 
 #===========================================
-# Forecasting and analysis function
+# Forecasting and analysis functions
 #===========================================
-kdscrps <- function(wm01_4D, hrz_lim, win_size, ahead_t, sampling){
+kdscrps <- function(wm01_4D, hrz_lim, win_size, ahead_t, in_sample_fr, crossvalsize, sampling){
   c_group     = seq(1,length(wm01_4D))
   crpsh_CLU   = list()
   wm02_4D   <<- list()
@@ -80,14 +80,14 @@ kdscrps <- function(wm01_4D, hrz_lim, win_size, ahead_t, sampling){
     crpsh   =  list()
     wm02_3D =  list()
     for (h in hrz_lim) {
-      cat("\nEvent Horizon +",h,"for",length(cus_list),"customers: ")
+      cat("\nEvent Horizon +",h,"for",nrow(wm01),"customers: ")
       # WorkMatrix 02, 03 & 04 ===================
       # wm02 in-sample seasonality pattern
       # wm03 out-sample load data
       # wm04 in- and out-sample de-seasonalised
-      event_horizon = data_size*in_sample_fr+1 + h
+      event_horizon = ncol(wm01)*in_sample_fr+1 + h -s02
       in_sample_ini = event_horizon - min(seas_bloc_ws,(event_horizon %/% s02)) * s02 + 1
-      outsample_end = (data_size*(1-in_sample_fr)) %/% s02 * s02 + event_horizon - s02 - (h%/%s02*s02)
+      outsample_end = (ncol(wm01)*(1-in_sample_fr)) %/% s02 * s02 + event_horizon - (h%/%s02*s02)
       in_sample_siz = event_horizon - in_sample_ini + 1
       outsample_siz = outsample_end - event_horizon
       inosample_siz = in_sample_siz + outsample_siz
@@ -127,7 +127,7 @@ kdscrps <- function(wm01_4D, hrz_lim, win_size, ahead_t, sampling){
       }
       fcstkij = list()
       crpskij = list()
-      for (j in 1:length(cus_list)){
+      for (j in 1:nrow(wm01_4D[[c]])){
         fcstkij[[j]] = fcstcrpsj[[j]][[1]]
         crpskij[[j]] = fcstcrpsj[[j]][[2]]
       }
@@ -143,10 +143,10 @@ kdscrps <- function(wm01_4D, hrz_lim, win_size, ahead_t, sampling){
     cat('\nCreating statistical data, removing dimention of Horizon and Customers')
     for (k in win_size){
       for (i in ahead_t){
-        crpsh_All_tempki = integer(length(cus_list)*length(hrz_lim))
+        crpsh_All_tempki = integer(nrow(wm01_4D[[c]])*length(hrz_lim))
         for (h in hrz_lim){
           for (j in 1:nrow(wm01_4D[[c]])){
-            crpsh_All_tempki[j+(length(cus_list))*(match(h,hrz_lim)-1)] = crpsh[[match(h,hrz_lim)]][[j]][match(k,win_size),i]
+            crpsh_All_tempki[j+(nrow(wm01_4D[[c]]))*(match(h,hrz_lim)-1)] = crpsh[[match(h,hrz_lim)]][[j]][match(k,win_size),i]
           }
         }
         crpsh_All_meanki[match(k,win_size),i] = mean(crpsh_All_tempki)
@@ -159,29 +159,34 @@ kdscrps <- function(wm01_4D, hrz_lim, win_size, ahead_t, sampling){
   return(crpsh_CLU)
 }
 
+ws_crossover_fx <- function(crpsh_CLU){
+  ws_crossover  <<- list()
+  crpsh_CLU_dyn = crpsh_CLU
+  for (j in 1:length(crpsh_CLU)){
+    crpsh_CLU_dyn[[j]][[1]] = rbind(crpsh_CLU_dyn[[j]][[1]],0)
+    crpsh_CLU_dyn[[j]][[2]] = rbind(crpsh_CLU_dyn[[j]][[2]],0)
+    i = 1
+    while (crpsh_CLU_dyn[[j]][[1]][1,i] < crpsh_CLU_dyn[[j]][[1]][2,i] &
+           i < ncol(crpsh_CLU_dyn[[1]][[1]])){
+      crpsh_CLU_dyn[[j]][[1]][3,i] = crpsh_CLU_dyn[[j]][[1]][1,i]
+      crpsh_CLU_dyn[[j]][[2]][3,i] = crpsh_CLU_dyn[[j]][[2]][1,i]
+      ws_crossover[j] = i+1
+      i = i+1
+    }
+    while (i <= ncol(crpsh_CLU_dyn[[1]][[1]])){
+      crpsh_CLU_dyn[[j]][[1]][3,i] = crpsh_CLU_dyn[[j]][[1]][2,i]
+      crpsh_CLU_dyn[[j]][[2]][3,i] = crpsh_CLU_dyn[[j]][[2]][2,i]
+      i = i+1
+    }
+  }
+  return (crpsh_CLU_dyn)
+}
+
 #===========================================
 # Function run
 #===========================================
-crpsh_CLU = kdscrps(wm01_4D, hrz_lim, win_size, ahead_t, sampling)
-
-ws_crossover  = list()
-crpsh_CLU_dyn = crpsh_CLU
-for (j in 1:length(crpsh_CLU)){
-  crpsh_CLU_dyn[[j]][[1]] = rbind(crpsh_CLU_dyn[[j]][[1]],0)
-  crpsh_CLU_dyn[[j]][[2]] = rbind(crpsh_CLU_dyn[[j]][[2]],0)
-  i = 1
-  while (crpsh_CLU_dyn[[j]][[1]][1,i] < crpsh_CLU_dyn[[j]][[1]][2,i]){
-    crpsh_CLU_dyn[[j]][[1]][3,i] = crpsh_CLU_dyn[[j]][[1]][1,i]
-    crpsh_CLU_dyn[[j]][[2]][3,i] = crpsh_CLU_dyn[[j]][[2]][1,i]
-    ws_crossover[j] = i+1
-    i = i+1
-  }
-  while (i <= ncol(crpsh_CLU_dyn[[1]][[1]])){
-    crpsh_CLU_dyn[[j]][[1]][3,i] = crpsh_CLU_dyn[[j]][[1]][2,i]
-    crpsh_CLU_dyn[[j]][[2]][3,i] = crpsh_CLU_dyn[[j]][[2]][2,i]
-    i = i+1
-  }
-}
+crpsh_CLU     = kdscrps(wm01_4D, hrz_lim, win_size, ahead_t, in_sample_fr, crossvalsize, sampling)
+crpsh_CLU_dyn = ws_crossover_fx(crpsh_CLU)
 
 print(proc.time() - ptm)        # Stop the clock
 
