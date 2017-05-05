@@ -30,8 +30,13 @@ registerDoParallel(cl)
 # Parameters & Start data
 #===========================================
 # From KSSM0100
-sum_of_h      = sum_of_h
-data_size     = data_size
+wm01_00       <- readRDS("0100_import-complete.rds")
+importpar     <- readRDS("0100_import-parameter.rds")
+s01           <- importpar[1]
+s02           <- importpar[2]
+s03           <- importpar[3]
+sum_of_h      <- importpar[4]
+data_size     <- importpar[5]
 
 # New parameters
 cus_list      = seq(1,20)
@@ -41,7 +46,7 @@ win_size      = c(4,24)
 ahead_t       = seq(1, (24/sum_of_h))
 hrz_lim       = c(0) #seq(0,(150/sum_of_h)) * 23
 in_sample_fr  = 2/3           # Fraction for diving in- and out-sample
-crossvalsize  = 1             # Number of weeks in the end of in_sample used for crossvalidation
+crossvalsize  = 4             # Number of weeks in the end of in_sample used for crossvalidation
 seas_bloc_ws  = 1000          # Number of weeks used for calculating seasonality pattern
 sampling      = 1024          # For monte-carlo CRPS calculation
 

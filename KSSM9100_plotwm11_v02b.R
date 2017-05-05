@@ -60,12 +60,12 @@ linetype <- c(1:3)
 for (i in 1:(length(sim_cus_clu))){
   lines(wm21_automean[i,(1:sim_rangefcst)], type="l", lwd=1.5, lty=linetype[1],col=colors[i])
 }
-points(wm22_optgmean[,2],wm22_optgmean[,1],col="red",pch=19)
-legend('topright', inset=c(-0.10,0), legend = c(sim_cus_clu),
-       lty=1, col=rainbow(length(sim_cus_clu)), bty='n', cex=.75, title="Groups")
-
-plot(wm22_optgmean[,5],wm22_optgmean[,1],main=paste("CRPS vs #customer in group"))
-plot(wm22_optgmean[,5],wm22_optgmean[,4],main=paste("sdev vs #customer in group"))
-plot(wm22_optgmean[,3],wm22_optgmean[,1],main=paste("CRPS vs aggr demand /group"))
-plot(wm22_optgmean[,3],wm22_optgmean[,4],main=paste("sdev vs aggr demand /group"))
-plot(wm22_optgmean[,4],wm22_optgmean[,1],main=paste("sdev vs CRPS"))
+# points(wm22_optgmean[,2],wm22_optgmean[,1],col="red",pch=19)
+# legend('topright', inset=c(-0.10,0), legend = c(sim_cus_clu),
+#        lty=1, col=rainbow(length(sim_cus_clu)), bty='n', cex=.75, title="Groups")
+# 
+# plot(wm22_optgmean[,5],wm22_optgmean[,1],main=paste("CRPS vs #customer in group"))
+# plot(wm22_optgmean[,5],wm22_optgmean[,4],main=paste("sdev vs #customer in group"))
+# plot(wm22_optgmean[,3],wm22_optgmean[,1],main=paste("CRPS vs aggr demand /group"))
+# plot(wm22_optgmean[,3],wm22_optgmean[,4],main=paste("sdev vs aggr demand /group"))
+# plot(wm22_optgmean[,4],wm22_optgmean[,1],main=paste("sdev vs CRPS"))

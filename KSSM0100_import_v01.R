@@ -20,7 +20,6 @@
 library(readr)
 
 ptm <- proc.time() # Start the clock!
-setwd("~/_mysync/load_forecasting")
 
 #===========================================
 # Parameters
@@ -40,6 +39,8 @@ sum_of_h      = 1
 cus_list      = seq(1,1000)
 data_size     = (y366+y365*2-(30+31)*24)/sum_of_h
 read_xls_file = T
+# Parameter Bundle
+importpar     = c(s01,s02,s03,sum_of_h,data_size)
 
 #===========================================
 # Read and clean data
@@ -121,5 +122,8 @@ for (j in cus_list){
   wv02_01 = as.numeric(tapply(wv02,(seq_along(wv02)-1) %/% (sum_of_h), sum))
   wm01_00[j,1:(data_size)]  = wv02_01 / sum_of_h
 }
+
+saveRDS(wm01_00,   file="0100_import-complete.rds")
+saveRDS(importpar, file="0100_import-parameter.rds")
 
 print(proc.time() - ptm)        # Stop the clock
