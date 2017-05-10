@@ -24,8 +24,6 @@ ptm <- proc.time() # Start the clock!
 cl  <- makeCluster(detectCores())
 registerDoParallel(cl)
 
-# source('./KSSM0100_import_v01.R')
-
 #===========================================
 # Parameters & Start data
 #===========================================
@@ -39,20 +37,23 @@ sum_of_h      <- importpar[4]
 data_size     <- importpar[5]
 
 # New parameters
-cus_list      = seq(1,20)
-cus_clu       = c(15) #c(10,20)
-wm01_01       = wm01_00[min(cus_list):length(cus_list),]
+cus_list      = seq(1,25)
+frontierstp   = detectCores() * 2
+####### cus_clu       = c(15) #c(10,20)
 win_size      = c(4,24)
 ahead_t       = seq(1, (24/sum_of_h))
 hrz_lim       = c(0) #seq(0,(150/sum_of_h)) * 23
 in_sample_fr  = 2/3           # Fraction for diving in- and out-sample
-crossvalsize  = 4             # Number of weeks in the end of in_sample used for crossvalidation
+crossvalsize  = 1             # Number of weeks in the end of in_sample used for crossvalidation
 seas_bloc_ws  = 6             # Number of weeks used for calculating seasonality pattern (6 seems best)
 sampling      = 1024          # For monte-carlo CRPS calculation
 
+
+wm01_01       = wm01_00[min(cus_list):length(cus_list),]
+
 # Parameter Bundle
-periodpar     = c(s01,s02,s03,sum_of_h,data_size,in_sample_fr)
-parbundl0200  = list(periodpar,cus_list,cus_clu,win_size,ahead_t,hrz_lim,sampling)
+# periodpar     = c(s01,s02,s03,sum_of_h,data_size,in_sample_fr)
+# parbundl0200  = list(periodpar,cus_list,cus_clu,win_size,ahead_t,hrz_lim,sampling)
 
 #===========================================
 # Aggregating demand randomly
@@ -79,13 +80,13 @@ kdscrps <- function(wm01_4D, hrz_lim, win_size, ahead_t, in_sample_fr, crossvals
   wm02_4D   <<- list()
   fcst_4D   <<- list()
   for (c in c_group){
-    cat("\n\n\n----------------------------------------\nGROUP NUMBER ",c," OF ",max(c_group),"\n----------------------------------------")
+    # cat("\n\n\n----------------------------------------\nGROUP NUMBER ",c," OF ",max(c_group),"\n----------------------------------------")
     wm01    =  wm01_4D[[c]]
     fcsth   =  list()
     crpsh   =  list()
     wm02_3D =  list()
     for (h in hrz_lim) {
-      cat("\nEvent Horizon +",h,"for",nrow(wm01),"customers: ")
+      # cat("\nEvent Horizon +",h,"for",nrow(wm01),"customers: ")
       # WorkMatrix 02, 03 & 04 ===================
       # wm02 in-sample seasonality pattern
       # wm03 out-sample load data
@@ -101,7 +102,7 @@ kdscrps <- function(wm01_4D, hrz_lim, win_size, ahead_t, in_sample_fr, crossvals
       wm03          = matrix(nrow=nrow(wm01_4D[[c]]), ncol=outsample_siz)
       wm04          = matrix(nrow=nrow(wm01_4D[[c]]), ncol=(inosample_siz))
       for (j in 1:nrow(wm01_4D[[c]])){
-        if (j == 1){cat("[Seasonality] ")}
+        # if (j == 1){cat("[Seasonality] ")}
         # cat(".")
         wv31i  = wm01[j,(in_sample_ini):(event_horizon)]
         wv31o  = wm01[j,(event_horizon+1):(outsample_end)]
@@ -113,7 +114,7 @@ kdscrps <- function(wm01_4D, hrz_lim, win_size, ahead_t, in_sample_fr, crossvals
       }
       wm02_3D[[match(h,hrz_lim)]] = wm02
       # Forecasting and CRPS =====================
-      cat("[Forecasting]")
+      # cat("[Forecasting]")
       fcstcrpsj <- foreach (j = 1:nrow(wm01_4D[[c]]),
                         .packages=c("forecast","verification")) %dopar% {
         # cat(".")
@@ -145,7 +146,7 @@ kdscrps <- function(wm01_4D, hrz_lim, win_size, ahead_t, in_sample_fr, crossvals
     crpsh_All = list()
     crpsh_All_meanki = matrix(nrow=length(win_size),ncol=length(ahead_t))
     crpsh_All_desvki = matrix(nrow=length(win_size),ncol=length(ahead_t))
-    cat('\nCreating statistical data, removing dimention of Horizon and Customers')
+    # cat('\nCreating statistical data, removing dimention of Horizon and Customers')
     for (k in win_size){
       for (i in ahead_t){
         crpsh_All_tempki = integer(nrow(wm01_4D[[c]])*length(hrz_lim))

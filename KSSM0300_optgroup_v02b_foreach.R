@@ -40,9 +40,9 @@ cus_grouping_A <- function(wv42){
 cus_grouping_C <- function(wv42){
   if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
     fl11   <- list((wv42 %*% (wm01_4D1[,(in_sample_ini):(event_horizon)])) / sum(wv42))
-    fl12   <- kdscrps(fl11, c(0), win_size, ahead_t, (1 - crossvalsize / length(fv01) * s02), crossvalsize, sampling)
+    fl12   <- kdscrps(fl11, (hrz_lim-crossvalsize*s02), win_size, ahead_t, in_sample_fr, crossvalsize, sampling)
     fl13   <- ws_crossover_fx(fl12)
-    randev <- mean(fl13[[1]][[1]][3,])
+    randev <- fl13[[1]][[1]][3,1]
   } else {randev <- 10}#
   return(randev)
 }
@@ -53,7 +53,7 @@ cus_grouping_C <- function(wv42){
 opt_ahead_t   = 1
 opt_win_sel   = 1
 opt_hrz_sel   = 1
-frontierstp   = detectCores() * 2
+frontierstp   = detectCores() * 1.5
 
 # Parameter Bundle
 optgrppar     = c(opt_ahead_t,opt_win_sel,opt_hrz_sel,frontierstp)
@@ -88,40 +88,48 @@ optgrp_plA <- foreach (i = 1:frontierstp,
                      starting.values=c(rep(1,length(cus_list))),
                      Domains = cbind(c(rep(0,length(cus_list))),c(rep(1,length(cus_list)))),
                      data.type.int=TRUE,  int.seed=1,
-                     print.level=0)
+                     print.level=1)
   cat("\nDone stepwise frontier",i,"of",frontierstp)
   optgrp$par
 }
-optgrp_plA = matrix(optgrp_plA,frontierstp,length(cus_list))
 
 optgrp_plC <- foreach (i = 1:frontierstp,
-                       .packages=c("forecast","verification","rgenoud"),
-                       .combine=c("rbind")) %:%{
-                         opt_min_cusd  = wv46[i]
-                         opt_max_cusd  = wv46[i+1]
-                         optgrp   <- genoud(cus_grouping_C, nvars=length(cus_list), max.generations=300, wait.generations=20,
-                                            starting.values=c(rep(1,length(cus_list))),
-                                            Domains = cbind(c(rep(0,length(cus_list))),c(rep(1,length(cus_list)))),
-                                            data.type.int=TRUE,  int.seed=1,
-                                            print.level=1)
-                         cat("\nDone stepwise frontier",i,"of",frontierstp)
-                         optgrp$par
-                       }
-optgrp_plC = matrix(optgrp_plC,frontierstp,length(cus_list))
+                       .packages=c("forecast","verification","rgenoud","foreach"),
+                       .combine=c("rbind")) %dopar%{
+  opt_min_cusd  = wv46[i]
+  opt_max_cusd  = wv46[i+1]
+  optgrp   <- genoud(cus_grouping_C, nvars=length(cus_list), max.generations=300, wait.generations=20,
+                    starting.values=c(rep(1,length(cus_list))),
+                    Domains = cbind(c(rep(0,length(cus_list))),c(rep(1,length(cus_list)))),
+                    data.type.int=TRUE,  int.seed=1,
+                    print.level=1)
+  cat("\nDone stepwise frontier",i,"of",frontierstp)
+  optgrp$par
+}
 
-# optgrp_plt = matrix(nrow=frontierstp,ncol=3)
-# for (i in 1:frontierstp){
-#   opt_min_cusd  = wv46[i]
-#   opt_max_cusd  = wv46[i+1]
-#   optgrp_plt[i,1] = sum(optgrp_plA[i,]*wv45)
-#   optgrp_plt[i,2] = cus_grouping_A(optgrp_plA[i,])
-#   optgrp_plt[i,3] = sum(optgrp_plA[i,])
-# }
+optgrp_pltA = matrix(nrow=frontierstp,ncol=3)
+for (i in 1:frontierstp){
+  opt_min_cusd  = wv46[i]
+  opt_max_cusd  = wv46[i+1]
+  optgrp_pltA[i,1] = sum(optgrp_plA[i,]*wv45)
+  optgrp_pltA[i,2] = cus_grouping_A(optgrp_plA[i,])
+  optgrp_pltA[i,3] = sum(optgrp_plA[i,])
+}
+
+optgrp_pltC = matrix(nrow=frontierstp,ncol=3)
+for (i in 1:frontierstp){
+  opt_min_cusd  = wv46[i]
+  opt_max_cusd  = wv46[i+1]
+  optgrp_pltC[i,1] = sum(optgrp_plC[i,]*wv45)
+  optgrp_pltC[i,2] = cus_grouping_C(optgrp_plA[i,])
+  optgrp_pltC[i,3] = sum(optgrp_plC[i,])
+}
 
 print(proc.time() - ptm)        # Stop the clock
 
 #===========================================
 # Outputs
 #===========================================
-saveRDS(list(optgrp_plA,optgrp_plt), file="0300_optgrp.rds")
-saveRDS(optgrppar,                   file="0300_optpar.rds")
+saveRDS(list(optgrp_plA,optgrp_pltA), file="0300_optgrp_sdev.rds")
+saveRDS(list(optgrp_plC,optgrp_pltC), file="0300_optgrp_crps.rds")
+saveRDS(optgrppar,                    file="0300_optpar.rds")
