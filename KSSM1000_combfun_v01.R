@@ -5,12 +5,14 @@
 #         efsa@bath.edu
 # Created in 10/Feb/17
 #-------------------------------------------
-# KSSM0200 base forecasting
+# KSSM1000 combined functions optim & fcst
 #-------------------------------------------
 # Notes
 # 11/04 Modular implemented
 # 15/04 Saves forecasts and data for later use
 # 26/04 Cross validation and seasonal bloc
+# 10/05 Finished optimisation grouping
+# 11/05 Started integration of modules
 #===========================================
 
 #===========================================
@@ -24,9 +26,6 @@ ptm <- proc.time() # Start the clock!
 cl  <- makeCluster(detectCores())
 registerDoParallel(cl)
 
-#===========================================
-# Parameters & Start data
-#===========================================
 # From KSSM0100
 wm01_00       <- readRDS("0100_import-complete.rds")
 importpar     <- readRDS("0100_import-parameter.rds")
@@ -36,24 +35,122 @@ s03           <- importpar[3]
 sum_of_h      <- importpar[4]
 data_size     <- importpar[5]
 
-# New parameters
-cus_list      = seq(1,25)
-frontierstp   = detectCores() * 2
-####### cus_clu       = c(15) #c(10,20)
-win_size      = c(4,24)
-ahead_t       = seq(1, (24/sum_of_h))
-hrz_lim       = c(0) #seq(0,(150/sum_of_h)) * 23
-in_sample_fr  = 2/3           # Fraction for diving in- and out-sample
-crossvalsize  = 1             # Number of weeks in the end of in_sample used for crossvalidation
-seas_bloc_ws  = 6             # Number of weeks used for calculating seasonality pattern (6 seems best)
-sampling      = 1024          # For monte-carlo CRPS calculation
+#===========================================
+# Integrated Parameters
+#===========================================
+cus_list      = seq(1,10)
+frontierstp   = 8                       # Number of demand bins
+win_size      = c(4,24)                 # Small and large win_size (select only 2)
+ahead_t       = seq(1, (24/sum_of_h))   # Up to s02
+hrz_lim       = c(0)
+in_sample_fr  = 2/3                     # Fraction for diving in- and out-sample
+crossvalsize  = 1                       # Number of weeks in the end of in_sample used for crossvalidation
+seas_bloc_ws  = 6                       # Number of weeks used for calculating seasonality pattern (6 seems best)
+sampling      = 1024                    # For monte-carlo CRPS calculation
+
+#===========================================
+# Functions Declarations
+#===========================================
+fx_evhor <- function (wm01_01,h,in_sample_fr,s02,seas_bloc_ws,crossvalsize){
+  event_horizon = ncol(wm01_01)*in_sample_fr+1 + h - s02
+  in_sample_ini = event_horizon - min((seas_bloc_ws),(event_horizon %/% s02)) * s02 + 1
+  outsample_end = event_horizon + 24
+  in_sample_siz = event_horizon - in_sample_ini + 1
+  outsample_siz = outsample_end - event_horizon
+  inosample_siz = in_sample_siz + outsample_siz
+  crossval_ini  = in_sample_siz - crossvalsize * s02 + 1
+  event_hrz_mod = crossval_ini - 1
+  evhor_out     = c(event_horizon,in_sample_ini,outsample_end,in_sample_siz,outsample_siz,inosample_siz,event_hrz_mod,crossval_ini)
+  # starts, in_sample until [7], crossval from [8] to [4], outsample of [5] until [6]
+  return(evhor_out)
+}
+
+fx_seas   <- function (wm01,s01,s02,sum_of_h,def_evhor){
+  wm02    <- foreach (j = 1:nrow(wm01), .combine=c("rbind")) %dopar% {
+    wv31i  = wm01[j,1:def_evhor[7]]
+    wv32i  = decompose(msts(wv31i,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)))
+    wv32is = wv32i$seasonal[1:(s02)]
+    wv32is
+  }
+  return(wm02)
+}
+
+fx_unseas <- function (wm01,wm02,s02,def_evhor){
+  wm04    <- foreach (j = 1:nrow(wm01), .combine=c("rbind")) %dopar% {
+    wv33a  = rep(wm02[j,],def_evhor[7]/s02)
+    wv33b  = wm02[j,1:(def_evhor[6] - def_evhor[7])]
+    wv33   = c(wv33a,wv33b)
+    wv34   = wm01[j,] - wv33
+    wv34
+  }
+  return(wm04)
+}
+
+fx_fcst_kds <- 
 
 
-wm01_01       = wm01_00[min(cus_list):length(cus_list),]
 
-# Parameter Bundle
-# periodpar     = c(s01,s02,s03,sum_of_h,data_size,in_sample_fr)
-# parbundl0200  = list(periodpar,cus_list,cus_clu,win_size,ahead_t,hrz_lim,sampling)
+
+  
+  
+  
+  
+  
+  
+  
+  fcstcrpsj <- foreach (j = 1:nrow(wm01_4D[[c]]),
+                        .packages=c("forecast","verification")) %dopar% {
+                          # cat(".")
+                          crpski = matrix(nrow=length(win_size),ncol=length(ahead_t))
+                          fcstki = matrix(nrow=length(win_size),ncol=length(ahead_t))
+                          for (k in win_size){
+                            for (i in ahead_t){
+                              densi = density(wm04[j,(event_hrz_mod - k + 1):(event_hrz_mod)])
+                              fcsti = sample(densi$x, sampling, replace=TRUE, prob=densi$y)
+                              crpsi = crps(rep(wm04[j,(event_hrz_mod + i)], sampling), data.frame(fcsti, densi$bw))
+                              crpski[match(k,win_size),i] = crpsi$CRPS
+                              fcstki[match(k,win_size),i] = mean(fcsti)
+                            }
+                          }
+                          list(fcstki,crpski)
+                        }
+fcstkij = list()
+crpskij = list()
+for (j in 1:nrow(wm01_4D[[c]])){
+  fcstkij[[j]] = fcstcrpsj[[j]][[1]]
+  crpskij[[j]] = fcstcrpsj[[j]][[2]]
+}
+
+
+
+
+
+
+
+
+
+#===========================================
+# Initial Analysis
+#===========================================
+wm01_01    = wm01_00[min(cus_list):length(cus_list),]
+
+
+def_evhor  = fx_evhor(wm01_01,0,in_sample_fr,s02,seas_bloc_ws,0)
+wm01       = wm01_01[,def_evhor[2]:def_evhor[3]]                    # work matrix
+wm02       = fx_seas(wm01,s01,s02,sum_of_h,def_evhor)               # in-sample seasonality pattern
+wm04       = fx_unseas(wm01,wm02,s02,def_evhor)                     # in-out sample unseasonalised
+
+# create plot for wm01 e wm04 !!!!
+
+
+
+
+
+
+
+
+
+#######################################################
 
 #===========================================
 # Aggregating demand randomly
