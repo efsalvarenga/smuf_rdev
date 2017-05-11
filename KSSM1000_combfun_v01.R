@@ -87,25 +87,79 @@ fx_unseas <- function (wm01,wm02,s02,def_evhor){
 }
 
 fx_fcst_kds <- function (wm04,win_size,def_evhor,sampling){
-  densi     <- foreach (j = 1:nrow(wm01)) %dopar% {
+  fcst_mc2     <- foreach (j = 1:nrow(wm01)) %dopar% {
     denssmall = density(wm04[j,(def_evhor[7] - win_size[1] + 1):(def_evhor[7])])
     denslarge = density(wm04[j,(def_evhor[7] - win_size[2] + 1):(def_evhor[7])])
     fcstsmall = sample(denssmall$x, sampling, replace=TRUE, prob=denssmall$y)
     fcstlarge = sample(denslarge$x, sampling, replace=TRUE, prob=denslarge$y)
     data.frame(fcstsmall,denssmall$bw,fcstlarge,denslarge$bw)
   }
-  return(densi)
+  return(fcst_mc2)
 }
 
-fx_crps_mc <- function (wm04,densi,def_evhor,sampling){
+fx_crps_mc <- function (wm04,fcst_mc,def_evhor,sampling){
   crps_mc2 <- foreach (j = 1:nrow(wm01)) %:%
     foreach (i = (def_evhor[4]+1):def_evhor[6], .combine=c("cbind")) %dopar% {
-      wv35s = crps(rep(wm04[j,i],sampling),densi[[j]][,1:2])$CRPS
-      wv35l = crps(rep(wm04[j,i],sampling),densi[[j]][,3:4])$CRPS
+      wv35s = crps(rep(wm04[j,i],sampling),fcst_mc[[j]][,1:2])$CRPS
+      wv35l = crps(rep(wm04[j,i],sampling),fcst_mc[[j]][,3:4])$CRPS
       c(wv35s,wv35l)
     }
   return(crps_mc2)
 }
+
+fx_co_fcstcrps <- function(fcst_mc,crps_mc,wm02,def_evhor){
+  wscoj <- foreach (j = 1:nrow(wm01),.combine=c("cbind")) %dopar% {
+    i=1
+    wscrossover = 1
+    while (match(min(crps_mc[[j]][,i]),crps_mc[[j]][,i]) < 2 & i < def_evhor[5]){
+      wscrossover = i+1
+      i = i+1
+    }
+    wscrossover
+  }
+  crps_co <- foreach (j = 1:nrow(wm01),.combine=c("rbind")) %dopar% {
+    wv36c = matrix(ncol=def_evhor[5])
+    wv36c[1:wscoj[j]] = crps_mc[[j]][1,1:wscoj[j]]
+    if (wscoj[j]<def_evhor[5]) {
+      wv36c[wscoj[j]:def_evhor[5]]=crps_mc[[j]][2,wscoj[j]:def_evhor[5]]
+    }
+    wv36c
+  }
+  fcst_co <- foreach (j = 1:nrow(wm01),.combine=c("rbind")) %dopar% {
+    wv36f = matrix(ncol=def_evhor[5])
+    fcst1 = colMeans(fcst_mc[[j]])[1]
+    fcst2 = colMeans(fcst_mc[[j]])[3]
+    wv36f[1:wscoj[j]] = as.numeric(fcst1)
+    if (wscoj[j]<def_evhor[5]) {
+      wv36f[wscoj[j]:def_evhor[5]]=as.numeric(fcst2)
+    }
+    wv33b = wm02[j,1:(def_evhor[6] - def_evhor[7])]
+    (wv36f+wv33b)
+  }
+  return(list(fcst_co,crps_co))
+}
+
+
+
+
+
+
+
+
+
+plot(range(1:def_evhor[5]), range(min(crps_co),max(crps_co)), bty="n", type="n", xlab=paste("xlabel"),
+     ylab="ylabel",main=paste("title"))
+grid (NA,NULL, lty = 'dotted')
+par(mar=c(5,4,4,3.5), xpd=TRUE)
+colors <- rainbow(nrow(wm01))
+linetype <- c(1:3)
+for (i in 1:nrow(wm01)){
+  lines(crps_co[i,1:def_evhor[5]], type="l", lwd=1.5, lty=linetype[1],col=colors[i])
+}
+legend('topright', inset=c(-0.10,0), legend = cus_list,
+       lty=1, col=rainbow(nrow(wm01)), bty='n', cex=.75, title="legend")
+
+
 
 
 
@@ -121,9 +175,14 @@ wm01_01    = wm01_00[min(cus_list):length(cus_list),]
 def_evhor  = fx_evhor(wm01_01,0,in_sample_fr,s02,seas_bloc_ws,0)
 wm01       = wm01_01[,def_evhor[2]:def_evhor[3]]                    # work matrix
 wm02       = fx_seas(wm01,s01,s02,sum_of_h,def_evhor)               # in-sample seasonality pattern
+wm03       = wm01[,(def_evhor[4]+1):def_evhor[6]]                   # out-sample original load data
 wm04       = fx_unseas(wm01,wm02,s02,def_evhor)                     # in-out sample unseasonalised
-densi      = fx_fcst_kds(wm04,win_size,def_evhor,sampling)
-crps_mc    = fx_crps_mc(wm04,densi,def_evhor,sampling)
+fcst_mc    = fx_fcst_kds(wm04,win_size,def_evhor,sampling)
+crps_mc    = fx_crps_mc(wm04,fcst_mc,def_evhor,sampling)
+fcstcrps   = fx_co_fcstcrps(fcst_mc,crps_mc,wm02,def_evhor)
+wmfcst     = fcstcrps[[1]]                                          # forecasted data (mean)
+wmcrps     = fcstcrps[[2]]                                          # CRPS of forecast
+
 
 
 
