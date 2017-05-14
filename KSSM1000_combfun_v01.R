@@ -1,5 +1,5 @@
 #===========================================
-# Smart Metering Forecasting using KDE
+# Smart Metering Forecasting
 #
 # Author  Estevao "Steve" Alvarenga
 #         efsa@bath.edu
@@ -9,7 +9,7 @@
 #-------------------------------------------
 # Notes
 # 11/04 Modular implemented
-# 15/04 Saves forecasts and data for later use
+# 15/04 Saves forecasts and data for later
 # 26/04 Cross validation and seasonal bloc
 # 10/05 Finished optimisation grouping
 # 11/05 Started integration of modules
@@ -42,43 +42,35 @@ cus_list      = seq(1,10)
 frontierstp   = 8                       # Number of demand bins
 win_size      = c(4,24)                 # Small and large win_size (select only 2)
 ahead_t       = seq(1, (24/sum_of_h))   # Up to s02
-hrz_lim       = c(0)
+hrz_lim       = seq(0,7)*137
 in_sample_fr  = 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  = 1                       # Number of weeks in the end of in_sample used for crossvalidation
-crossvalstep  = 35                      # Step used for multiple crossvalidation
+crossvalstps  = 10                      # Step used for multiple crossvalidation
 seas_bloc_ws  = 6                       # Number of weeks used for calculating seasonality pattern (6 seems best)
 sampling      = 1024                    # For monte-carlo CRPS calculation
 
 #===========================================
-# Functions Declarations
+# Functions Declarations: Basics
 #===========================================
-fx_evhor <- function (wm01_01,h,in_sample_fr,s02,seas_bloc_ws,crossvalsize,crossvalstep){
-  event_horizon = ncol(wm01_01)*in_sample_fr+1 + h - s02
+fx_evhor <- function (wm01_01,h,in_sample_fr,s02,seas_bloc_ws,crossvalsize){
+  event_horizon = ncol(wm01_01) * in_sample_fr + 1 + h - s02
   in_sample_ini = event_horizon - min((seas_bloc_ws),(event_horizon %/% s02)) * s02 + 1
-  outsample_end = event_horizon + 24
+  outsample_end = event_horizon + max(ahead_t)
   in_sample_siz = event_horizon - in_sample_ini + 1
   outsample_siz = outsample_end - event_horizon
   inosample_siz = in_sample_siz + outsample_siz
   crossval_ini  = in_sample_siz - crossvalsize * s02 + 1
   event_hrz_mod = crossval_ini - 1
-  crossval_seq  = seq(crossval_ini,in_sample_siz,crossvalstep)
-  crossval_end  = max(crossval_seq)
-  evhor_out     = c(event_horizon,in_sample_ini,outsample_end,in_sample_siz,outsample_siz,inosample_siz,event_hrz_mod,crossval_ini,crossval_end,crossvalstep)
+  if (crossvalsize==0){
+    crossval_ini=NA
+    crossval_end=NA
+  }
+  evhor_out     = c(event_horizon,in_sample_ini,outsample_end,in_sample_siz,outsample_siz,inosample_siz,event_hrz_mod,crossval_ini)
   return(evhor_out)
 }
 
-
-# retrhink everything for crossvalidation
-# WAS: evhor_out     = c(event_horizon,in_sample_ini,outsample_end,in_sample_siz,outsample_siz,inosample_siz,event_hrz_mod,crossval_ini)
-
-  
-
-
-
-
-
 fx_seas   <- function (wm01,s01,s02,sum_of_h,def_evhor){
-  wm02    <- foreach (j = 1:nrow(wm01), .combine=c("rbind")) %dopar% {
+  wm02    <- foreach (j = 1:nrow(wm01), .combine=c("rbind"), .packages=c("forecast")) %dopar% {
     wv31i  = wm01[j,1:def_evhor[7]]
     wv32i  = decompose(msts(wv31i,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)))
     wv32is = wv32i$seasonal[1:(s02)]
@@ -111,7 +103,7 @@ fx_fcst_kds <- function (wm04,win_size,def_evhor,sampling){
 
 fx_crps_mc <- function (wm04,fcst_mc,def_evhor,sampling){
   crps_mc2 <- foreach (j = 1:nrow(wm01)) %:%
-    foreach (i = (def_evhor[4]+1):def_evhor[6], .combine=c("cbind")) %dopar% {
+    foreach (i = (def_evhor[4]+1):def_evhor[6], .combine=c("cbind"), .packages=c("verification")) %dopar% {
       wv35s = crps(rep(wm04[j,i],sampling),fcst_mc[[j]][,1:2])$CRPS
       wv35l = crps(rep(wm04[j,i],sampling),fcst_mc[[j]][,3:4])$CRPS
       c(wv35s,wv35l)
@@ -119,16 +111,7 @@ fx_crps_mc <- function (wm04,fcst_mc,def_evhor,sampling){
   return(crps_mc2)
 }
 
-fx_cover <- function()
-
-
-
-
-
-
-
-# crossover should be on cross validation only
-fx_co_fcstcrps <- function(fcst_mc,crps_mc,wm02,def_evhor){
+fx_crossover <- function(fcst_mc,crps_mc,wm02,def_evhor){
   wscoj <- foreach (j = 1:nrow(wm01),.combine=c("cbind")) %dopar% {
     i=1
     wscrossover = 1
@@ -138,47 +121,91 @@ fx_co_fcstcrps <- function(fcst_mc,crps_mc,wm02,def_evhor){
     }
     wscrossover
   }
+  return(wscoj)
+}
+
+fx_getmode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
+fx_fcst_wm <- function(fcst_mc,cvcojmean,out_evhor,wm02){
+  fcst_co <- foreach (j = 1:nrow(wm01),.combine=c("rbind")) %dopar% {
+    wv36f = matrix(ncol=out_evhor[5])
+    fcst1 = colMeans(fcst_mc[[j]])[1]
+    fcst2 = colMeans(fcst_mc[[j]])[3]
+    wv36f[1:cvcojmean[j]] = as.numeric(fcst1)
+    if (cvcojmean[j]<out_evhor[5]) {
+      wv36f[cvcojmean[j]:out_evhor[5]]=as.numeric(fcst2)
+    }
+    wv33b = wm02[j,1:(out_evhor[6] - out_evhor[7])]
+    (wv36f+wv33b)
+  }
+}
+
+fx_crps_wm <- function(crps_mc,cvcojmean,out_evhor,wm02){
   crps_co <- foreach (j = 1:nrow(wm01),.combine=c("rbind")) %dopar% {
-    wv36c = matrix(ncol=def_evhor[5])
-    wv36c[1:wscoj[j]] = crps_mc[[j]][1,1:wscoj[j]]
-    if (wscoj[j]<def_evhor[5]) {
-      wv36c[wscoj[j]:def_evhor[5]]=crps_mc[[j]][2,wscoj[j]:def_evhor[5]]
+    wv36c = matrix(ncol=out_evhor[5])
+    wv36c[1:cvcojmean[j]] = crps_mc[[j]][1,1:cvcojmean[j]]
+    if (cvcojmean[j]<out_evhor[5]) {
+      wv36c[cvcojmean[j]:out_evhor[5]]=crps_mc[[j]][2,cvcojmean[j]:out_evhor[5]]
     }
     wv36c
   }
-  fcst_co <- foreach (j = 1:nrow(wm01),.combine=c("rbind")) %dopar% {
-    wv36f = matrix(ncol=def_evhor[5])
-    fcst1 = colMeans(fcst_mc[[j]])[1]
-    fcst2 = colMeans(fcst_mc[[j]])[3]
-    wv36f[1:wscoj[j]] = as.numeric(fcst1)
-    if (wscoj[j]<def_evhor[5]) {
-      wv36f[wscoj[j]:def_evhor[5]]=as.numeric(fcst2)
-    }
-    wv33b = wm02[j,1:(def_evhor[6] - def_evhor[7])]
-    (wv36f+wv33b)
+}
+
+#===========================================
+# Functions Declarations: Plots
+#===========================================
+fx_plt_mymat <- function(wm05){
+  plot(range(1:ncol(wm05)), range(min(wm05),max(wm05)), bty="n", type="n"
+  )#xlab=paste("matrix cols"), ylab="values",main=paste("ploting matrix"))
+  grid (NA,NULL, lty = 'dotted')
+  par(mar=c(5,4,4,3.5), xpd=TRUE)
+  colors   <- rainbow(nrow(wm05))
+  linetype <- c(1:3)
+  for (i in 1:nrow(wm05)){
+    lines(wm05[i,], type="l", lwd=1.5, lty=linetype[1],col=colors[i])
   }
-  return(list(fcst_co,crps_co))
+  # wm05mean = colMeans(wm05)
+  # lines(wm05mean, type="l", lwd=3, lty=linetype[2])
 }
+#legend('topright', inset=c(-0.10,0), legend = cus_list,
+#       lty=1, col=rainbow(nrow(wm01)), bty='n', cex=.75, title="legend")
 
-
-
-
-
-
-
-
-# implement plot with selection for checking results
-plot(range(1:def_evhor[5]), range(min(crps_co),max(crps_co)), bty="n", type="n", xlab=paste("xlabel"),
-     ylab="ylabel",main=paste("title"))
-grid (NA,NULL, lty = 'dotted')
-par(mar=c(5,4,4,3.5), xpd=TRUE)
-colors <- rainbow(nrow(wm01))
-linetype <- c(1:3)
-for (i in 1:nrow(wm01)){
-  lines(crps_co[i,1:def_evhor[5]], type="l", lwd=1.5, lty=linetype[1],col=colors[i])
+#===========================================
+# Functions Declarations: Integrations
+#===========================================
+fx_int_cvfcst <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize){
+  def_evhor  = fx_evhor(wm01_01,h,in_sample_fr,s02,seas_bloc_ws,crossvalsize)
+  wm01       = wm01_01[,def_evhor[2]:def_evhor[3]]                    # work matrix
+  # ------ Cross Validation ----------------
+  cross_seq     = seq(def_evhor[8],def_evhor[4]-max(ahead_t),round((def_evhor[4]-max(ahead_t)-def_evhor[7])/crossvalstps))
+  crossval_runs <- foreach (k = cross_seq, .combine=c('rbind')) %do%{
+    co_evhor    = fx_evhor(wm01,k,0,s02,seas_bloc_ws,0)
+    wm01cv      = wm01[,co_evhor[2]:co_evhor[3]]                  # work matrix
+    wm02cv      = fx_seas(wm01cv,s01,s02,sum_of_h,co_evhor)       # in-sample seasonality pattern
+    wm03cv      = wm01cv[,(co_evhor[4]+1):co_evhor[6]]            # out-sample original load data
+    wm04cv      = fx_unseas(wm01cv,wm02cv,s02,co_evhor)           # in-out sample unseasonalised
+    fcst_mccv   = fx_fcst_kds(wm04cv,win_size,co_evhor,sampling)
+    crps_mccv   = fx_crps_mc(wm04cv,fcst_mccv,co_evhor,sampling)
+    cvcoj       = fx_crossover(fcst_mccv,crps_mccv,wm02cv,co_evhor)
+    cvcoj
+  }
+  cvcojmean <- foreach (a = 1:ncol(crossval_runs),.combine=c('rbind')) %dopar%{
+    round(mean(crossval_runs[,a]))
+  }
+  # ------ Forecasting & Verification ------
+  out_evhor  = fx_evhor(wm01_01,h,in_sample_fr,s02,seas_bloc_ws,0)
+  wm02       = fx_seas(wm01,s01,s02,sum_of_h,out_evhor)               # in-sample seasonality pattern
+  wm03       = wm01[,(out_evhor[4]+1):out_evhor[6]]                   # out-sample original load data
+  wm04       = fx_unseas(wm01,wm02,s02,out_evhor)                     # in-out sample unseasonalised
+  fcst_mc    = fx_fcst_kds(wm04,win_size,out_evhor,sampling)
+  crps_mc    = fx_crps_mc(wm04,fcst_mc,out_evhor,sampling)
+  wm03fcst   = fx_fcst_wm(fcst_mc,cvcojmean,out_evhor,wm02)
+  wm05       = fx_crps_wm(crps_mc,cvcojmean,out_evhor,wm02)
+  return(colMeans(wm05))
 }
-legend('topright', inset=c(-0.10,0), legend = cus_list,
-       lty=1, col=rainbow(nrow(wm01)), bty='n', cex=.75, title="legend")
 
 
 
@@ -188,26 +215,19 @@ legend('topright', inset=c(-0.10,0), legend = cus_list,
 
 
 #===========================================
-# 
+# Pre-processing
 #===========================================
 wm01_01    = wm01_00[min(cus_list):length(cus_list),]
 
 
-def_evhor  = fx_evhor(wm01_01,h,in_sample_fr,s02,seas_bloc_ws,crossvalsize,crossvalstep)
-wm01       = wm01_01[,def_evhor[2]:def_evhor[3]]                    # work matrix
-wm02       = fx_seas(wm01,s01,s02,sum_of_h,def_evhor)               # in-sample seasonality pattern
-wm03       = wm01[,(def_evhor[4]+1):def_evhor[6]]                   # out-sample original load data
-wm04       = fx_unseas(wm01,wm02,s02,def_evhor)                     # in-out sample unseasonalised
-fcst_mc    = fx_fcst_kds(wm04,win_size,def_evhor,sampling)
-crps_mc    = fx_crps_mc(wm04,fcst_mc,def_evhor,sampling)
-fcstcrps   = fx_co_fcstcrps(fcst_mc,crps_mc,wm02,def_evhor)
-wmfcst     = fcstcrps[[1]]                                          # forecasted data (mean)
-wmcrps     = fcstcrps[[2]]                                          # CRPS of forecast
-
-
-
-
-
+#===========================================
+# Running
+#===========================================
+wm06 <- foreach(h = hrz_lim, .combine=c('rbind')) %do%{
+  fx_int_cvfcst(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize)
+}
+fx_plt_mymat(wm06)
+lines(colMeans(wm06))
 
 
 
