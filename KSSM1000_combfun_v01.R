@@ -43,15 +43,16 @@ frontierstp   = 8                       # Number of demand bins
 win_size      = c(4,24)                 # Small and large win_size (select only 2)
 ahead_t       = seq(1, (24/sum_of_h))   # Up to s02
 hrz_lim       = c(0)
-in_sample_fr  = 2/3                     # Fraction for diving in- and out-sample
+in_sample_fr  = 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  = 1                       # Number of weeks in the end of in_sample used for crossvalidation
+crossvalstep  = 35                      # Step used for multiple crossvalidation
 seas_bloc_ws  = 6                       # Number of weeks used for calculating seasonality pattern (6 seems best)
 sampling      = 1024                    # For monte-carlo CRPS calculation
 
 #===========================================
 # Functions Declarations
 #===========================================
-fx_evhor <- function (wm01_01,h,in_sample_fr,s02,seas_bloc_ws,crossvalsize){
+fx_evhor <- function (wm01_01,h,in_sample_fr,s02,seas_bloc_ws,crossvalsize,crossvalstep){
   event_horizon = ncol(wm01_01)*in_sample_fr+1 + h - s02
   in_sample_ini = event_horizon - min((seas_bloc_ws),(event_horizon %/% s02)) * s02 + 1
   outsample_end = event_horizon + 24
@@ -60,10 +61,21 @@ fx_evhor <- function (wm01_01,h,in_sample_fr,s02,seas_bloc_ws,crossvalsize){
   inosample_siz = in_sample_siz + outsample_siz
   crossval_ini  = in_sample_siz - crossvalsize * s02 + 1
   event_hrz_mod = crossval_ini - 1
-  evhor_out     = c(event_horizon,in_sample_ini,outsample_end,in_sample_siz,outsample_siz,inosample_siz,event_hrz_mod,crossval_ini)
-  # starts, in_sample until [7], crossval from [8] to [4], outsample of [5] until [6]
+  crossval_seq  = seq(crossval_ini,in_sample_siz,crossvalstep)
+  crossval_end  = max(crossval_seq)
+  evhor_out     = c(event_horizon,in_sample_ini,outsample_end,in_sample_siz,outsample_siz,inosample_siz,event_hrz_mod,crossval_ini,crossval_end,crossvalstep)
   return(evhor_out)
 }
+
+
+# retrhink everything for crossvalidation
+# WAS: evhor_out     = c(event_horizon,in_sample_ini,outsample_end,in_sample_siz,outsample_siz,inosample_siz,event_hrz_mod,crossval_ini)
+
+  
+
+
+
+
 
 fx_seas   <- function (wm01,s01,s02,sum_of_h,def_evhor){
   wm02    <- foreach (j = 1:nrow(wm01), .combine=c("rbind")) %dopar% {
@@ -107,6 +119,15 @@ fx_crps_mc <- function (wm04,fcst_mc,def_evhor,sampling){
   return(crps_mc2)
 }
 
+fx_cover <- function()
+
+
+
+
+
+
+
+# crossover should be on cross validation only
 fx_co_fcstcrps <- function(fcst_mc,crps_mc,wm02,def_evhor){
   wscoj <- foreach (j = 1:nrow(wm01),.combine=c("cbind")) %dopar% {
     i=1
@@ -146,7 +167,7 @@ fx_co_fcstcrps <- function(fcst_mc,crps_mc,wm02,def_evhor){
 
 
 
-
+# implement plot with selection for checking results
 plot(range(1:def_evhor[5]), range(min(crps_co),max(crps_co)), bty="n", type="n", xlab=paste("xlabel"),
      ylab="ylabel",main=paste("title"))
 grid (NA,NULL, lty = 'dotted')
@@ -172,7 +193,7 @@ legend('topright', inset=c(-0.10,0), legend = cus_list,
 wm01_01    = wm01_00[min(cus_list):length(cus_list),]
 
 
-def_evhor  = fx_evhor(wm01_01,0,in_sample_fr,s02,seas_bloc_ws,0)
+def_evhor  = fx_evhor(wm01_01,h,in_sample_fr,s02,seas_bloc_ws,crossvalsize,crossvalstep)
 wm01       = wm01_01[,def_evhor[2]:def_evhor[3]]                    # work matrix
 wm02       = fx_seas(wm01,s01,s02,sum_of_h,def_evhor)               # in-sample seasonality pattern
 wm03       = wm01[,(def_evhor[4]+1):def_evhor[6]]                   # out-sample original load data
