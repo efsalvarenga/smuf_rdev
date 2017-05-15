@@ -21,6 +21,7 @@
 library(forecast)
 library(verification)
 library(doParallel)
+library(rgenoud)
 
 ptm <- proc.time() # Start the clock!
 cl  <- makeCluster(detectCores())
@@ -167,21 +168,41 @@ fx_rndgrp <- function(wm01,frontierstp){
 }
 
 fx_sd_mymat <- function (mymat){
-  sdev <- foreach (i <- 1:nrow(mymat),.combine=c("cbind")) %do%{
+  sdev <- foreach (i = 1:nrow(mymat),.combine=c("cbind")) %do%{
     sd(mymat[i,])
   }
   return(as.numeric(sdev))
 }
+
+fx_optgrp_crps <- function (wv42){
+  if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
+    fv01   <- rbind(wv42 %*% wm01_01 / sum(wv42),0)
+    fl02   <- fx_int_cvfcst(fv01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,F)
+    result <- as.numeric(fl02[[2]][1,1])
+  } else {result <- 10}
+  return (result)
+}
+
+fx_optgrp_sdev <- function (wv42){
+  if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
+    sd_evhor <- fx_evhor(wm01_01,h,in_sample_fr,s02,seas_bloc_ws,crossvalsize)
+    fv01     <- as.numeric(wv42 %*% wm01_01[,sd_evhor[2]:sd_evhor[1]] / sum(wv42))
+    fv02     <- decompose(msts(fv01,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)))
+    fv03     <- fv01 - fv02$seasonal
+    result   <- sd(fv03)
+  } else {result <- 10}
+  return (result)
+}
+
 #===========================================
 # Functions Declarations: Plots
 #===========================================
 fx_plt_mymat <- function(wm05){
-  plot(range(1:ncol(wm05)), range(min(wm05),max(wm05)), bty="n", type="n"
-  )#xlab=paste("matrix cols"), ylab="values",main=paste("ploting matrix"))
-  grid (NA,NULL, lty <- 'dotted')
+  plot(range(1:ncol(wm05)), range(min(wm05),max(wm05)), bty="n", type="n")
+  grid (NA,NULL, lty = 'dotted')
   par(mar=c(5,4,4,3.5), xpd=TRUE)
-  colors   <- rainbow(nrow(wm05))
-  linetype <- c(1:3)
+  colors   = rainbow(nrow(wm05))
+  linetype = c(1:3)
   for (i in 1:nrow(wm05)){
     lines(wm05[i,], type="l", lwd=1.5, lty=linetype[1],col=colors[i])
   }
@@ -251,34 +272,27 @@ wl06rnd    <- fx_int_cvfcst(wm01_02,h,in_sample_fr,s01,s02,sum_of_h,win_size,sea
 wv45rnd    <- as.numeric(rowMeans(wl06rnd[[1]]) * rowSums(wm01_02l[[2]]))
 sd01rnd    <- as.numeric(fx_sd_mymat(wl06rnd[[3]]))
 
+#===========================================
+# Optimised groups forecast
+#===========================================
+wv46       <- seq(0,sum(wv45),sum(wv45)/frontierstp)
+optgrp_sdev <- foreach (i = 1:frontierstp,
+                       .packages=c("forecast","rgenoud"),
+                       .combine=c("rbind")) %dopar%{
+                         opt_min_cusd  = wv46[i]
+                         opt_max_cusd  = wv46[i+1]
+                         optgrp   <- genoud(fx_optgrp_sdev, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
+                                            Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
+                                            data.type.int=TRUE,  int.seed=1,
+                                            print.level=1)
+                         cat("\n\n===========================================\nDone stepwise frontier",i,"of",frontierstp,"\n===========================================\n\n") 
+                         optgrp$par
+                       }
 
-fx_optgrp_crps <- function (wv42){
-  if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
-    fv01 <- rbind(wv42 %*% wm01_01 / sum(wv42),0)
-    fl02 <- fx_int_cvfcst(fv01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,F)
-  } else {fl02 <- 10}
-  return(as.numeric(fl02[[2]][1,1]))
-}
-
-fx_optgrp_sdev <- function (wv42){
-  if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
-    sd_evhor <- fx_evhor(fv01,h,in_sample_fr,s02,seas_bloc_ws,crossvalsize)
-    fv01     <- wv42 %*% wm01_01[,sd_evhor[2]:sd_evhor[1]] / sum(wv42)
-    fv02     <- decompose(msts(fv01,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)))
-  }
-    
-}
-
-cus_grouping_A <- function(wv42){
-  if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
-    fv01   <- (wv42 %*% (wm01_4D1[,(in_sample_ini):(event_horizon)])) / sum(wv42)
-    fv02   <- decompose(msts(fv01[1,],seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)))
-    fv03   <- fv02$random
-    randev <- sd(fv03,na.rm=TRUE)
-  } else {randev <- 10}#abs(sum(wv42*wv45))+1}
-  return(randev)
-}
-
+# 
+# teste <- foreach (i = 1:45,.combine=c("rbind")) %do%{
+#   c(fx_optgrp_crps(wm01_02l[[2]][i,]),fx_optgrp_sdev(wm01_02l[[2]][i,]))
+# }
 
 
 
@@ -293,7 +307,6 @@ plot(sd01rnd,wv45rnd)
 
 
 
-wv46       <- seq(0,sum(wv45),sum(wv45)/frontierstp)
 
 
 
