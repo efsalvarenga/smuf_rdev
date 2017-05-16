@@ -39,8 +39,8 @@ data_size     <- importpar[5]
 #===========================================
 # Integrated Parameters
 #===========================================
-cus_list      <- seq(1,15)
-frontierstp   <- 8                       # Number of demand bins
+cus_list      <- seq(1,10)
+frontierstp   <- 3                       # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
 hrz_lim       <- seq(0,2)*137
@@ -49,7 +49,6 @@ crossvalsize  <- 1                       # Number of weeks in the end of in_samp
 crossvalstps  <- 2                       # Steps used for multiple crossvalidation
 seas_bloc_ws  <- 6                       # Number of weeks used for calculating seasonality pattern (6 seems best)
 sampling      <- 1024                    # For monte-carlo CRPS calculation
-frontierstp   <- 3                       # Stepwise frontier for portfolio optimisation
 
 #===========================================
 # Functions Declarations: Modules
@@ -273,21 +272,40 @@ wv45rnd    <- as.numeric(rowMeans(wl06rnd[[1]]) * rowSums(wm01_02l[[2]]))
 sd01rnd    <- as.numeric(fx_sd_mymat(wl06rnd[[3]]))
 
 #===========================================
-# Optimised groups forecast
+# Optimised sdev groups forecast
 #===========================================
-wv46       <- seq(0,sum(wv45),sum(wv45)/frontierstp)
-optgrp_sdev <- foreach (i = 1:frontierstp,
+wv46         <- seq(0,sum(wv45),sum(wv45)/frontierstp)
+opt_min_cusd <- min(wv46)
+opt_max_cusd <- max(wv46)
+optgrp_sdev  <- foreach (i = 1:frontierstp,
                        .packages=c("forecast","rgenoud"),
-                       .combine=c("rbind")) %dopar%{
+                       .combine=c("rbind")) %dopar% {
                          opt_min_cusd  = wv46[i]
                          opt_max_cusd  = wv46[i+1]
                          optgrp   <- genoud(fx_optgrp_sdev, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
                                             Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
                                             data.type.int=TRUE,  int.seed=1,
                                             print.level=1)
-                         cat("\n\n===========================================\nDone stepwise frontier",i,"of",frontierstp,"\n===========================================\n\n") 
                          optgrp$par
                        }
+wmoptsdev    <- foreach (i = 1:frontierstp, .combine=c("cbind")) %dopar% {
+  c(fx_optgrp_sdev(optgrp_sdev[i,]),optgrp_sdev[i,] %*% wv45)
+}
+
+optgrp_crps  <- foreach (i = 1:frontierstp,
+                         .packages=c("forecast","rgenoud"),
+                         .combine=c("rbind")) %do% {
+                           opt_min_cusd  = wv46[i]
+                           opt_max_cusd  = wv46[i+1]
+                           optgrp   <- genoud(fx_optgrp_crps, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
+                                              Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
+                                              data.type.int=TRUE,  int.seed=1,
+                                              print.level=1)
+                           optgrp$par
+                         }
+wmoptcrps    <- foreach (i = 1:frontierstp, .combine=c("cbind")) %dopar% {
+  c(fx_optgrp_crps(optgrp_crps[i,]),optgrp_crps[i,] %*% wv45)
+}
 
 # 
 # teste <- foreach (i = 1:45,.combine=c("rbind")) %do%{
@@ -297,43 +315,22 @@ optgrp_sdev <- foreach (i = 1:frontierstp,
 
 
 
-fx_plt_mymat(wl06[[2]])
-fx_plt_mymat(wl06rnd[[2]])
-plot(rowMeans(wl06[[2]]),wv45)
+# fx_plt_mymat(wl06[[2]])
+# fx_plt_mymat(wl06rnd[[2]])
+
+# plot(rowMeans(wl06[[2]]),wv45)
 plot(rowMeans(wl06rnd[[2]]),wv45rnd)
-plot(sd01,wv45)
-plot(sd01rnd,wv45rnd)
 
 
 
-
-
-
-
-  
-
-
-  # opt_ahead_t   <- opt_ahead_t
-  # opt_win_sel   <- opt_win_sel
-  # opt_hrz_sel   <- opt_hrz_sel
-  # rndsim_size   <- 50
-  
-
-  
-
-
-  rndgrp_pltres <- matrix(nrow=frontierstp,ncol=3)
-  wv46          <- seq(0,sum(wv45),sum(wv45)/frontierstp)
-  
-  for (i in 1:frontierstp){
-    print(i)
-    rndgrp_pltres[i,] <- colMeans(rndgrp_plt[(rndgrp_plt[,1]>wv46[i]&rndgrp_plt[,1]<wv46[i+1]),])
-  }
-  
-  
-  
-  
-
+rangesdev = range(min(as.numeric(c(wmoptsdev[1,],sd01rnd))),max(as.numeric(c(wmoptsdev[1,],sd01rnd))))
+plot(rangesdev,range(0:ceiling(sum(wv45))), bty="n", type="n", xlab=paste("stdev of noise after decompose"),
+     ylab="Mean Demand",main=paste("optimum vs random groups"))
+grid (NA,NULL, lty = 'dotted')
+points(sd01rnd,wv45rnd,col="red",pch=19)
+points(wmoptsdev[1,],wmoptsdev[2,],col="green",pch=19)
+legend('topright', inset=c(-0.10,0), legend = c("random","opt_sdev"),
+       lty=1, col=c("red","green"), bty='n', cex=.75, title="Groups")
 
 print(proc.time() - ptm)        # Stop the clock
 
