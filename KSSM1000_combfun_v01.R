@@ -272,11 +272,9 @@ wv45rnd    <- as.numeric(rowMeans(wl06rnd[[1]]) * rowSums(wm01_02l[[2]]))
 sd01rnd    <- as.numeric(fx_sd_mymat(wl06rnd[[3]]))
 
 #===========================================
-# Optimised sdev groups forecast
+# Optimised groups forecast
 #===========================================
 wv46         <- seq(0,sum(wv45),sum(wv45)/frontierstp)
-opt_min_cusd <- min(wv46)
-opt_max_cusd <- max(wv46)
 optgrp_sdev  <- foreach (i = 1:frontierstp,
                        .packages=c("forecast","rgenoud"),
                        .combine=c("rbind")) %dopar% {
@@ -288,24 +286,37 @@ optgrp_sdev  <- foreach (i = 1:frontierstp,
                                             print.level=1)
                          optgrp$par
                        }
-wmoptsdev    <- foreach (i = 1:frontierstp, .combine=c("cbind")) %dopar% {
-  c(fx_optgrp_sdev(optgrp_sdev[i,]),optgrp_sdev[i,] %*% wv45)
-}
 
-optgrp_crps  <- foreach (i = 1:frontierstp,
-                         .packages=c("forecast","rgenoud"),
-                         .combine=c("rbind")) %do% {
-                           opt_min_cusd  = wv46[i]
-                           opt_max_cusd  = wv46[i+1]
-                           optgrp   <- genoud(fx_optgrp_crps, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
-                                              Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
-                                              data.type.int=TRUE,  int.seed=1,
-                                              print.level=1)
-                           optgrp$par
-                         }
-wmoptcrps    <- foreach (i = 1:frontierstp, .combine=c("cbind")) %dopar% {
-  c(fx_optgrp_crps(optgrp_crps[i,]),optgrp_crps[i,] %*% wv45)
-}
+wm01_03l    <- list(optgrp_sdev %*% wm01_01, optgrp_sdev)
+wm01_03     <- wm01_03l[[1]] / rowSums(wm01_03l[[2]])
+wl06optsdev <- fx_int_cvfcst(wm01_03,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
+wv45optsdev <- as.numeric(rowMeans(wl06optsdev[[1]]) * rowSums(wm01_03l[[2]]))
+sd01optsdev <- as.numeric(fx_sd_mymat(wl06optsdev[[3]]))
+
+
+
+# opt_min_cusd <- min(wv46)
+# opt_max_cusd <- max(wv46)
+# wmoptsdev    <- foreach (i = 1:frontierstp, .combine=c("cbind")) %dopar% {
+#   c(fx_optgrp_sdev(optgrp_sdev[i,]),optgrp_sdev[i,] %*% wv45)
+# }
+
+# optgrp_crps  <- foreach (i = 1:frontierstp,
+#                          .packages=c("forecast","rgenoud"),
+#                          .combine=c("rbind")) %do% {
+#                            opt_min_cusd  = wv46[i]
+#                            opt_max_cusd  = wv46[i+1]
+#                            optgrp   <- genoud(fx_optgrp_crps, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
+#                                               Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
+#                                               data.type.int=TRUE,  int.seed=1,
+#                                               print.level=1)
+#                            optgrp$par
+#                          }
+# opt_min_cusd <- min(wv46)
+# opt_max_cusd <- max(wv46)
+# wmoptcrps    <- foreach (i = 1:frontierstp, .combine=c("cbind")) %do% {
+#   c(fx_optgrp_crps(optgrp_crps[i,]),optgrp_crps[i,] %*% wv45)
+# }
 
 # 
 # teste <- foreach (i = 1:45,.combine=c("rbind")) %do%{
@@ -323,12 +334,12 @@ plot(rowMeans(wl06rnd[[2]]),wv45rnd)
 
 
 
-rangesdev = range(min(as.numeric(c(wmoptsdev[1,],sd01rnd))),max(as.numeric(c(wmoptsdev[1,],sd01rnd))))
+rangesdev = range(min(as.numeric(c(sd01rnd,sd01optsdev))),max(as.numeric(c(sd01rnd,sd01optsdev))))
 plot(rangesdev,range(0:ceiling(sum(wv45))), bty="n", type="n", xlab=paste("stdev of noise after decompose"),
      ylab="Mean Demand",main=paste("optimum vs random groups"))
 grid (NA,NULL, lty = 'dotted')
 points(sd01rnd,wv45rnd,col="red",pch=19)
-points(wmoptsdev[1,],wmoptsdev[2,],col="green",pch=19)
+points(sd01optsdev,wmoptsdev[2,],col="green",pch=19)
 legend('topright', inset=c(-0.10,0), legend = c("random","opt_sdev"),
        lty=1, col=c("red","green"), bty='n', cex=.75, title="Groups")
 
