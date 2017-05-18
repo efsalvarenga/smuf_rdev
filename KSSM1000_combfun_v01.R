@@ -44,10 +44,10 @@ data_size     <- importpar[5]
 # Integrated Parameters
 #===========================================
 cus_list      <- seq(1,100)
-frontierstp   <- 20                      # Number of demand bins (Stepwise frontier for portfolio optimisation)
+frontierstp   <- 50                      # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
-hrz_lim       <- seq(0,20)*537
+hrz_lim       <- seq(0,2)*1537
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 crossvalstps  <- 2                       # Steps used for multiple crossvalidation
@@ -257,123 +257,131 @@ fx_int_cvfcst <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_
     return(list(wm03fcst,wm05,wm04[,1:out_evhor[7]]))
   }
 }
-
-
 #===========================================
-# Individual customers forecast
+# BIG FOR LOOP (on h) START
 #===========================================
-wm01_01    <- wm01_00[min(cus_list):length(cus_list),]
-wl06       <- fx_int_cvfcst(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
-wv45       <- rowMeans(wl06[[1]])
-sd01       <- as.numeric(fx_sd_mymat(wl06[[3]]))
-
+for (h in hrz_lim){
+  cat("\nRunning BIG FOR LOOP with h =",h,"| Step",match(h,hrz_lim), "of",length(hrz_lim))
+  #===========================================
+  # Individual customers forecast
+  #===========================================
+  wm01_01    <- wm01_00[min(cus_list):length(cus_list),]
+  wl06       <- fx_int_cvfcst(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
+  wv45       <- rowMeans(wl06[[1]])
+  sd01       <- as.numeric(fx_sd_mymat(wl06[[3]]))
+  
+  #===========================================
+  # Random groups forecast
+  #===========================================
+  wm01_02l   <- fx_rndgrp(wm01_01,frontierstp)
+  wm01_02    <- wm01_02l[[1]] / rowSums(wm01_02l[[2]])
+  wl06rnd    <- fx_int_cvfcst(wm01_02,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
+  wv45rnd    <- as.numeric(rowMeans(wl06rnd[[1]]) * rowSums(wm01_02l[[2]]))
+  sd01rnd    <- as.numeric(fx_sd_mymat(wl06rnd[[3]]))
+  cr01rnd    <- rowMeans(wl06rnd[[2]])
+  
+  #===========================================
+  # Optimised sdev groups forecast
+  #===========================================
+  wv46         <- seq(0,sum(wv45),sum(wv45)/frontierstp)
+  optgrp_sdev  <- foreach (i = 1:frontierstp,
+                           .packages=c("forecast","rgenoud"),
+                           .combine=c("rbind")) %dopar% {
+                             opt_min_cusd  = wv46[i]
+                             opt_max_cusd  = wv46[i+1]
+                             optgrp   <- genoud(fx_optgrp_sdev, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
+                                                Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
+                                                data.type.int=TRUE,  int.seed=1,
+                                                print.level=1)
+                             optgrp$par
+                           }
+  opt_min_cusd<- 0
+  opt_max_cusd<- max(wv46)
+  wm01_03l    <- list(optgrp_sdev %*% wm01_01, optgrp_sdev)
+  wm01_03     <- wm01_03l[[1]] / rowSums(wm01_03l[[2]])
+  wl06optsdev <- fx_int_cvfcst(wm01_03,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
+  # wv45optsdev <- as.numeric(rowMeans(wl06optsdev[[1]]) * rowSums(wm01_03l[[2]]))
+  sd01optsdev <- as.numeric(fx_sd_mymat(wl06optsdev[[1]]))
+  cr01optsdev <- rowMeans(wl06optsdev[[2]])
+  cr02optsdev <- foreach (i = 1:frontierstp,
+                          .packages=c("forecast","rgenoud","foreach"),
+                          .combine=c("cbind")) %dopar% {
+                            fx_optgrp_crps(optgrp_sdev[i,])
+                          }
+  sd02optsdev <- foreach (i = 1:frontierstp,
+                          .packages=c("forecast","rgenoud"),
+                          .combine=c("cbind")) %dopar% {
+                            fx_optgrp_sdev(optgrp_sdev[i,])
+                          }
+  # for sdev calc: sd01 is the outsample result, sd02 is the crossval result
+  # for crps calc: cr01 is the outsample result, cr02 is the crossval result
+  
+  #===========================================
+  # Optimised crps groups forecast
+  #===========================================
+  optgrp_crps  <- foreach (i = 1:frontierstp,
+                           .packages=c("forecast","rgenoud","foreach"),
+                           .combine=c("rbind")) %dopar% {
+                             opt_min_cusd  = wv46[i]
+                             opt_max_cusd  = wv46[i+1]
+                             optgrp   <- genoud(fx_optgrp_crps, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
+                                                Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
+                                                data.type.int=TRUE,  int.seed=1,
+                                                print.level=1)
+                             optgrp$par
+                           }
+  opt_min_cusd<- 0
+  opt_max_cusd<- max(wv46)
+  wm01_04l    <- list(optgrp_crps %*% wm01_01, optgrp_crps)
+  wm01_04     <- wm01_04l[[1]] / rowSums(wm01_04l[[2]])
+  wl06optcrps <- fx_int_cvfcst(wm01_04,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
+  # wv45optcrps <- as.numeric(rowMeans(wl06optcrps[[1]]) * rowSums(wm01_04l[[2]]))
+  sd01optcrps <- as.numeric(fx_sd_mymat(wl06optcrps[[1]]))
+  cr01optcrps <- rowMeans(wl06optcrps[[2]])
+  cr02optcrps <- foreach (i = 1:frontierstp,
+                          .packages=c("forecast","rgenoud","foreach"),
+                          .combine=c("cbind")) %dopar% {
+                            fx_optgrp_crps(optgrp_crps[i,])
+                          }
+  sd02optcrps <- foreach (i = 1:frontierstp,
+                          .packages=c("forecast","rgenoud"),
+                          .combine=c("cbind")) %dopar% {
+                            fx_optgrp_sdev(optgrp_crps[i,])
+                          }
+  # for sdev calc: sd01 is the outsample result, sd02 is the crossval result
+  # for crps calc: cr01 is the outsample result, cr02 is the crossval result
+  
+  #===========================================
+  # Plots
+  #===========================================
+  rangecrps = range(min(as.numeric(c(cr01rnd,cr01optsdev,cr01optsdev))),max(as.numeric(c(cr01rnd,cr01optsdev,cr01optsdev))))
+  plot(rangecrps,range(0:ceiling(sum(wv45))), bty="n", type="n", xlab=paste("CRPS"),
+       ylab="Mean Demand",main=paste("optimum vs random groups for h =",h))
+  grid (NA,NULL, lty = 'dotted')
+  points(cr01rnd,wv45rnd,col="gray80",pch=20)
+  points(cr01optsdev,wv46[-1],col="darkgreen",pch=19)
+  points(cr02optsdev,wv46[-1],col="green",pch=19)
+  points(cr01optcrps,wv46[-1],col="darkblue",pch=19)
+  points(cr02optcrps,wv46[-1],col="blue",pch=19)
+  legend('topright', inset=c(0,0), legend = c("random","opt_sdev_outsample","opt_sdev_insample","opt_crps_outsample","opt_crps_insample"),
+         lty=1, col=c("gray80","darkgreen","green","darkblue","blue"), bty='n', cex=.75, title="Grouping")
+  
+  # rangesdev = range(min(as.numeric(c(sd01rnd,sd01optsdev,sd01optcrps))),max(as.numeric(c(sd01rnd,sd01optsdev,sd01optcrps))))
+  # plot(rangesdev,range(0:ceiling(sum(wv45))), bty="n", type="n", xlab=paste("SDEV of deseasonalised"),
+  #      ylab="Mean Demand",main=paste("optimum vs random groups for h =",h))
+  # grid (NA,NULL, lty = 'dotted')
+  # points(sd01rnd,wv45rnd,col="gray80",pch=20)
+  # points(sd01optsdev,wv46[-1],col="darkgreen",pch=19)
+  # points(sd02optsdev,wv46[-1],col="green",pch=19)
+  # points(sd01optcrps,wv46[-1],col="darkblue",pch=19)
+  # points(sd02optcrps,wv46[-1],col="blue",pch=19)
+  # legend('topright', inset=c(0,0), legend = c("random","opt_sdev_outsample","opt_sdev_insample","opt_crps_outsample","opt_crps_insample"),
+  #        lty=1, col=c("gray80","darkgreen","green","darkblue","blue"), bty='n', cex=.75, title="Grouping")
+  # 
+}
 #===========================================
-# Random groups forecast
+# BIG FOR LOOP (on h) END
 #===========================================
-wm01_02l   <- fx_rndgrp(wm01_01,frontierstp)
-wm01_02    <- wm01_02l[[1]] / rowSums(wm01_02l[[2]])
-wl06rnd    <- fx_int_cvfcst(wm01_02,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
-wv45rnd    <- as.numeric(rowMeans(wl06rnd[[1]]) * rowSums(wm01_02l[[2]]))
-sd01rnd    <- as.numeric(fx_sd_mymat(wl06rnd[[3]]))
-cr01rnd    <- rowMeans(wl06rnd[[2]])
-
-#===========================================
-# Optimised sdev groups forecast
-#===========================================
-wv46         <- seq(0,sum(wv45),sum(wv45)/frontierstp)
-optgrp_sdev  <- foreach (i = 1:frontierstp,
-                       .packages=c("forecast","rgenoud"),
-                       .combine=c("rbind")) %dopar% {
-                         opt_min_cusd  = wv46[i]
-                         opt_max_cusd  = wv46[i+1]
-                         optgrp   <- genoud(fx_optgrp_sdev, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
-                                            Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
-                                            data.type.int=TRUE,  int.seed=1,
-                                            print.level=1)
-                         optgrp$par
-                       }
-opt_min_cusd<- 0
-opt_max_cusd<- max(wv46)
-wm01_03l    <- list(optgrp_sdev %*% wm01_01, optgrp_sdev)
-wm01_03     <- wm01_03l[[1]] / rowSums(wm01_03l[[2]])
-wl06optsdev <- fx_int_cvfcst(wm01_03,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
-# wv45optsdev <- as.numeric(rowMeans(wl06optsdev[[1]]) * rowSums(wm01_03l[[2]]))
-sd01optsdev <- as.numeric(fx_sd_mymat(wl06optsdev[[1]]))
-cr01optsdev <- rowMeans(wl06optsdev[[2]])
-cr02optsdev <- foreach (i = 1:frontierstp,
-                        .packages=c("forecast","rgenoud","foreach"),
-                        .combine=c("cbind")) %dopar% {
-                          fx_optgrp_crps(optgrp_sdev[i,])
-                        }
-sd02optsdev <- foreach (i = 1:frontierstp,
-                        .packages=c("forecast","rgenoud"),
-                        .combine=c("cbind")) %dopar% {
-                          fx_optgrp_sdev(optgrp_sdev[i,])
-                        }
-# for sdev calc: sd01 is the outsample result, sd02 is the crossval result
-# for crps calc: cr01 is the outsample result, cr02 is the crossval result
-
-#===========================================
-# Optimised crps groups forecast
-#===========================================
-optgrp_crps  <- foreach (i = 1:frontierstp,
-                         .packages=c("forecast","rgenoud","foreach"),
-                         .combine=c("rbind")) %dopar% {
-                           opt_min_cusd  = wv46[i]
-                           opt_max_cusd  = wv46[i+1]
-                           optgrp   <- genoud(fx_optgrp_crps, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
-                                              Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
-                                              data.type.int=TRUE,  int.seed=1,
-                                              print.level=1)
-                           optgrp$par
-                         }
-opt_min_cusd<- 0
-opt_max_cusd<- max(wv46)
-wm01_04l    <- list(optgrp_crps %*% wm01_01, optgrp_crps)
-wm01_04     <- wm01_04l[[1]] / rowSums(wm01_04l[[2]])
-wl06optcrps <- fx_int_cvfcst(wm01_04,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
-# wv45optcrps <- as.numeric(rowMeans(wl06optcrps[[1]]) * rowSums(wm01_04l[[2]]))
-sd01optcrps <- as.numeric(fx_sd_mymat(wl06optcrps[[1]]))
-cr01optcrps <- rowMeans(wl06optcrps[[2]])
-cr02optcrps <- foreach (i = 1:frontierstp,
-                        .packages=c("forecast","rgenoud","foreach"),
-                        .combine=c("cbind")) %dopar% {
-                          fx_optgrp_crps(optgrp_crps[i,])
-                        }
-sd02optcrps <- foreach (i = 1:frontierstp,
-                        .packages=c("forecast","rgenoud"),
-                        .combine=c("cbind")) %dopar% {
-                          fx_optgrp_sdev(optgrp_crps[i,])
-                        }
-# for sdev calc: sd01 is the outsample result, sd02 is the crossval result
-# for crps calc: cr01 is the outsample result, cr02 is the crossval result
-
-#===========================================
-# Plots
-#===========================================
-rangecrps = range(min(as.numeric(c(cr01rnd,cr01optsdev,cr01optsdev))),max(as.numeric(c(cr01rnd,cr01optsdev,cr01optsdev))))
-plot(rangecrps,range(0:ceiling(sum(wv45))), bty="n", type="n", xlab=paste("CRPS"),
-     ylab="Mean Demand",main=paste("optimum vs random groups for h =",h))
-grid (NA,NULL, lty = 'dotted')
-points(cr01rnd,wv45rnd,col="gray80",pch=20)
-points(cr01optsdev,wv46[-1],col="darkgreen",pch=19)
-points(cr02optsdev,wv46[-1],col="green",pch=19)
-points(cr01optcrps,wv46[-1],col="darkblue",pch=19)
-points(cr02optcrps,wv46[-1],col="blue",pch=19)
-legend('topright', inset=c(0,0), legend = c("random","opt_sdev_outsample","opt_sdev_insample","opt_crps_outsample","opt_crps_insample"),
-       lty=1, col=c("gray80","darkgreen","green","darkblue","blue"), bty='n', cex=.75, title="Grouping")
-
-rangesdev = range(min(as.numeric(c(sd01rnd,sd01optsdev,sd01optcrps))),max(as.numeric(c(sd01rnd,sd01optsdev,sd01optcrps))))
-plot(rangesdev,range(0:ceiling(sum(wv45))), bty="n", type="n", xlab=paste("SDEV of deseasonalised"),
-     ylab="Mean Demand",main=paste("optimum vs random groups for h =",h))
-grid (NA,NULL, lty = 'dotted')
-points(sd01rnd,wv45rnd,col="gray80",pch=20)
-points(sd01optsdev,wv46[-1],col="darkgreen",pch=19)
-points(sd02optsdev,wv46[-1],col="green",pch=19)
-points(sd01optcrps,wv46[-1],col="darkblue",pch=19)
-points(sd02optcrps,wv46[-1],col="blue",pch=19)
-legend('topright', inset=c(0,0), legend = c("random","opt_sdev_outsample","opt_sdev_insample","opt_crps_outsample","opt_crps_insample"),
-       lty=1, col=c("gray80","darkgreen","green","darkblue","blue"), bty='n', cex=.75, title="Grouping")
 
 print(proc.time() - ptm)        # Stop the clock
 
