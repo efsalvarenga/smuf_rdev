@@ -41,11 +41,11 @@ data_size     <- importpar[5]
 #===========================================
 # Integrated Parameters
 #===========================================
-cus_list      <- seq(1,15)
-frontierstp   <- 10                      # Number of demand bins (Stepwise frontier for portfolio optimisation)
+cus_list      <- seq(1,200)
+frontierstp   <- 50                      # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
-hrz_lim       <- seq(0,1)*1537
+hrz_lim       <- seq(0,3)*1537
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 crossvalstps  <- 2                       # Steps used for multiple crossvalidation
@@ -382,7 +382,7 @@ for (h in hrz_lim){
 # BIG [h] LOOP Plots
 #===========================================
 for (i in 1:length(hrz_lim)){
-  fx_plt_rnd_vs_opt(bighlpcrps[i],c(0,0.2),c(0,30),"CRPS")
+  fx_plt_rnd_vs_opt(bighlpcrps[[i]],c(0,0.2),c(0,5),"CRPS")
 }
 
 #===========================================
