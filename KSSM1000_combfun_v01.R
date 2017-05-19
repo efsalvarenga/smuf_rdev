@@ -261,7 +261,8 @@ fx_int_cvfcst <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_
 # BIG FOR LOOP (on h) START
 #===========================================
 for (h in hrz_lim){
-  cat("\nRunning BIG FOR LOOP with h =",h,"| Step",match(h,hrz_lim), "of",length(hrz_lim))
+  print(proc.time() - ptm)
+  cat("\n\nRunning BIG FOR LOOP with h =",h,"| Step",match(h,hrz_lim), "of",length(hrz_lim),"\n")
   #===========================================
   # Individual customers forecast
   #===========================================
@@ -394,4 +395,3 @@ print(proc.time() - ptm)        # Stop the clock
 # saveRDS(fcst_4D[[1]],   file="0200_forecas1.rds") # fcst winsize vs time_ahead per customer, per horizon, per grouping
 # saveRDS(parbundl0200,   file="0200_parbundl.rds")
 # saveRDS(kdscrps,        file="0200_function.rds")
-
