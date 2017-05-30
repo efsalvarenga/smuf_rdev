@@ -51,6 +51,7 @@ crossvalsize  <- 1                       # Number of weeks in the end of in_samp
 crossvalstps  <- 2                       # Steps used for multiple crossvalidation
 seas_bloc_ws  <- 6                       # Number of weeks used for calculating seasonality pattern (6 seems best)
 sampling      <- 1024                    # For monte-carlo CRPS calculation
+maxlag        <- 5                       # Max lags analysed for ARIMA fit (ARMA-GARCH model)
 
 #===========================================
 # Functions Declarations: Modules
@@ -108,9 +109,8 @@ fx_fcst_armagarch <- function (wm04,out_evhor,sampling){
   fcst_armagarch <- foreach (j = 1:nrow(wm04), .packages=c("rugarch")) %dopar% {
     runvec       <- wm04[j,1:out_evhor[7]]
     # Defining ARMA lags
-    final.aic <- Inf
-    final.order <- c(0,0,0)
-    for (p in 0:5) for (q in 0:5) {
+    final.bic <- matrix(nrow=0,ncol=4)
+    for (p in 0:maxlag) for (q in 0:maxlag) {
       if ( p == 0 && q == 0) {
         next
       }
@@ -118,19 +118,15 @@ fx_fcst_armagarch <- function (wm04,out_evhor,sampling){
                           error=function( err ) FALSE,
                           warning=function( err ) FALSE )
       if( !is.logical( arimaFit ) ) {
-        current.aic <- AIC(arimaFit)
-        if (current.aic < final.aic) {
-          final.aic <- current.aic
-          final.order <- c(p, 0, q)
-          final.arima <- arima(runvec, order=final.order)
-        }
+        final.bic <- rbind(final.bic,c(p,q,BIC(arimaFit),AIC(arimaFit)))
       } else {
         next
       }
     }
+    final.ord <- final.bic[sort.list(final.bic[,3]), ]
     # setting ARMA-GARCH spec (1,1)
     spec = ugarchspec(variance.model=list(garchOrder=c(1,1)),
-                      mean.model=list(armaOrder=c(final.order[1], final.order[3]), include.mean=T),
+                      mean.model=list(armaOrder=c(final.ord[1,1], final.ord[1,2]), include.mean=T),
                       distribution.model="sged")
     # fitting ARMA-GARCH parameters and simulating
     fit = tryCatch(ugarchfit(spec, runvec, solver = 'hybrid'),
@@ -139,7 +135,7 @@ fx_fcst_armagarch <- function (wm04,out_evhor,sampling){
     list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
   }
   return(fcst_armagarch)
-} # CONVERGENCE PROBLEM FOR J=6
+}
 
 fx_crps_mc <- function (wm04,fcst_mc,def_evhor,sampling){
   crps_mc2 <- foreach (j = 1:nrow(wm04)) %:%
