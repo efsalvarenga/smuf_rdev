@@ -32,15 +32,15 @@ data_size     <- importpar[5]
 #===========================================
 # Integrated Parameters
 #===========================================
-cus_list      <- seq(1,1000)
+cus_list      <- seq(1,12)
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
-hrz_lim       <- seq(0,9)*2069
+hrz_lim       <- seq(0,1)*2069
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 seas_bloc_ws  <- 6                       # Number of weeks used for calculating seasonality pattern (6 seems best)
 maxlag        <- 7                       # Max lags analysed for ARIMA fit (ARMA-GARCH model)
 
 #===========================================
-# Functions Declarations: Modules
+# Functions Declarations
 #===========================================
 fx_lags_armagarch <- function (wm04,maxlag,out_evhor){
   lags_armagarch <- foreach (j = 1:nrow(wm04), .packages=c("rugarch"), .combine=c("rbind")) %dopar% {
@@ -55,7 +55,7 @@ fx_lags_armagarch <- function (wm04,maxlag,out_evhor){
                           error=function( err ) FALSE,
                           warning=function( err ) FALSE )
       if( !is.logical( arimaFit ) ) {
-        final.bic <- rbind(final.bic,c(p,q,BIC(arimaFit),AIC(arimaFit)))
+        final.bic <- rbind(final.bic,c(p,q,AIC(arimaFit,k=log(out_evhor[7])),AIC(arimaFit)))
       } else {
         next
       }
