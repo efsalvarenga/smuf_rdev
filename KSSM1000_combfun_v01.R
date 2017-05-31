@@ -147,6 +147,15 @@ fx_crps_mc <- function (wm04,fcst_mc,def_evhor,sampling){
   return(crps_mc2)
 }
 
+fx_crpsgeneric <- function (wm04,fcst_mc,def_evhor,sampling){
+  crps_mc2 <- foreach (j = 1:nrow(wm04)) %:%
+    foreach (i = (def_evhor[4]+1):def_evhor[6], .combine=c("cbind"), .packages=c("verification")) %dopar% {
+      wv35 <- crps(rep(wm04[j,i],sampling),data.frame(fcst_mc[[j]][[1]][(i-def_evhor[4]),],fcst_mc[[j]][[2]][(i-def_evhor[4]),]))$CRPS
+      c(wv35)
+    }
+  return(crps_mc2)
+}
+
 fx_crossover <- function(fcst_mc,crps_mc,wm02,def_evhor){
   wscoj <- foreach (j = 1:nrow(wm02),.combine=c("cbind")) %dopar% {
     i=1
@@ -307,8 +316,9 @@ fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h
   wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                      # out-sample original load data
   wm04       <- fx_unseas(wm01,wm02,s02,out_evhor)                        # in-out sample unseasonalised
   fcst_mc    <- fx_fcst_armagarch(wm04,maxlag,ahead_t,out_evhor,sampling) # returns list with next ahead_t fcst and sd
+  crps_mc    <- fx_crpsgeneric(wm04,fcst_mc,def_evhor,sampling)
   fcst_mcb    <- fx_fcst_kds(wm04,win_size,out_evhor,sampling)
-  crps_mc    <- fx_crps_mc(wm04,fcst_mc,out_evhor,sampling)
+  crps_mcb    <- fx_crps_mc(wm04,fcst_mcb,out_evhor,sampling)
   wm03fcst   <- fx_fcst_wm(fcst_mc,cvcojmean,out_evhor,wm02)
   wm05       <- fx_crps_wm(crps_mc,cvcojmean,out_evhor,wm02)
   return(list(wm03fcst,wm05,wm04[,1:out_evhor[7]]))
