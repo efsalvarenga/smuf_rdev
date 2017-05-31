@@ -49,7 +49,7 @@ maxlag        <- 5                       # Max lags analysed for ARIMA fit (ARMA
 #===========================================
 # Functions Declarations: Modules
 #===========================================
-fx_evhor <- function (wm01_01,h,in_sample_fr,s02,seas_bloc_ws,crossvalsize){
+fx_evhor <- function (wm01_01,h,in_sample_fr,ahead_t,s02,seas_bloc_ws,crossvalsize){
   event_horizon <- ncol(wm01_01) * in_sample_fr + 1 + h - s02
   in_sample_ini <- event_horizon - min((seas_bloc_ws),(event_horizon %/% s02)) * s02 + 1
   outsample_end <- event_horizon + max(ahead_t)
@@ -221,7 +221,7 @@ fx_optgrp_crps <- function (wv42){
 
 fx_optgrp_sdev <- function (wv42){
   if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
-    sd_evhor <- fx_evhor(wm01_01,h,in_sample_fr,s02,seas_bloc_ws,crossvalsize)
+    sd_evhor <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,seas_bloc_ws,crossvalsize)
     fv01     <- as.numeric(wv42 %*% wm01_01[,sd_evhor[2]:sd_evhor[1]] / sum(wv42))
     fv02     <- decompose(msts(fv01,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)))
     fv03     <- fv01 - fv02$seasonal
@@ -263,7 +263,7 @@ fx_plt_rnd_vs_opt <- function(bighlp,myrangex,myrangey,xunit) {
 # Functions Declarations: Integrations
 #===========================================
 fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,fcst_run){
-  def_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,s02,seas_bloc_ws,crossvalsize)
+  def_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,seas_bloc_ws,crossvalsize)
   wm01       <- wm01_01[,def_evhor[2]:def_evhor[3]]                # work matrix
   # ------ Cross Validation ----------------
   cross_seq     <- seq(def_evhor[8],def_evhor[4]-max(ahead_t),round((def_evhor[4]-max(ahead_t)-def_evhor[7])/crossvalstps))
@@ -290,7 +290,7 @@ fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,se
   }
   # ------ Forecasting & Verification ------
   if (fcst_run == T) {
-    out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,s02,seas_bloc_ws,0)
+    out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,seas_bloc_ws,0)
     wm02       <- fx_seas(wm01,s01,s02,sum_of_h,out_evhor)           # in-sample seasonality pattern
     wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]               # out-sample original load data
     wm04       <- fx_unseas(wm01,wm02,s02,out_evhor)                 # in-out sample unseasonalised
@@ -303,7 +303,7 @@ fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,se
 }
 
 fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize){
-  out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,s02,seas_bloc_ws,0)
+  out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,seas_bloc_ws,0)
   wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                       # work matrix
   wm02       <- fx_seas(wm01,s01,s02,sum_of_h,out_evhor)                  # in-sample seasonality pattern
   wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                      # out-sample original load data
