@@ -111,7 +111,7 @@ fx_fcst_armagarch <- function (wm04,armalags,ahead_t,out_evhor,sampling){
                           error=function( err ) FALSE,
                           warning=function( err ) FALSE )
       if( !is.logical( arimaFit ) ) {
-        final.bic <- rbind(final.bic,c(p,q,BIC(arimaFit),AIC(arimaFit)))
+        final.bic <- rbind(final.bic,c(p,q,AIC(arimaFit,k = log(out_evhor[7])),AIC(arimaFit)))
       } else {
         next
       }
