@@ -38,13 +38,13 @@ cus_list      <- seq(1,10)
 frontierstp   <- 5                       # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
-hrz_lim       <- seq(0,1)*2537
+hrz_lim       <- seq(0,1)*2069
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 crossvalstps  <- 2                       # Steps used for multiple crossvalidation (Only KDE)
 seas_bloc_ws  <- 6                       # Number of weeks used for calculating seasonality pattern (6 seems best)
 sampling      <- 1024                    # For monte-carlo CRPS calculation
-maxlag        <- 5                       # Max lags analysed for ARIMA fit (ARMA-GARCH model)
+armalags      <- c(2,3)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)
 
 #===========================================
 # Functions Declarations: Modules
@@ -98,12 +98,12 @@ fx_fcst_kds <- function (wm04,win_size,def_evhor,sampling){
   return(fcst_mc2)
 }
 
-fx_fcst_armagarch <- function (wm04,maxlag,ahead_t,out_evhor,sampling){
+fx_fcst_armagarch <- function (wm04,armalags,ahead_t,out_evhor,sampling){
   fcst_armagarch <- foreach (j = 1:nrow(wm04), .packages=c("rugarch")) %dopar% {
     runvec       <- wm04[j,1:out_evhor[7]]
     # Defining ARMA lags
     final.bic <- matrix(nrow=0,ncol=4)
-    for (p in 0:maxlag) for (q in 0:maxlag) {
+    for (p in 0:armalags[1]) for (q in 0:armalags[2]) {
       if ( p == 0 && q == 0) {
         next
       }
@@ -141,7 +141,7 @@ fx_crps_mc <- function (wm04,fcst_mc,def_evhor,sampling){
 }
 
 fx_crpsgeneric <- function (wm04,fcst_mc,def_evhor,sampling){
-  crps_mc2 <- foreach (j = 1:nrow(wm04)) %:%
+  crps_mc2 <- foreach (j = 1:nrow(wm04), .combine=c("rbind")) %:%
     foreach (i = (def_evhor[4]+1):def_evhor[6], .combine=c("cbind"), .packages=c("verification")) %dopar% {
       wv35 <- crps(rep(wm04[j,i],sampling),data.frame(fcst_mc[[j]][[1]][(i-def_evhor[4]),],fcst_mc[[j]][[2]][(i-def_evhor[4]),]))$CRPS
       c(wv35)
@@ -176,6 +176,14 @@ fx_fcst_wm <- function(fcst_mc,cvcojmean,out_evhor,wm02){
     if (cvcojmean[j]<out_evhor[5]) {
       wv36f[cvcojmean[j]:out_evhor[5]]=as.numeric(fcst2)
     }
+    wv33b <- wm02[j,1:(out_evhor[6] - out_evhor[7])]
+    (wv36f+wv33b)
+  }
+}
+
+fx_fcstgeneric <- function(fcst_mc,out_evhor,wm02){
+  fcst_co <- foreach (j = 1:nrow(wm02),.combine=c("rbind")) %dopar% {
+    wv36f <- rowMeans(fcst_mc[[j]][[1]])
     wv33b <- wm02[j,1:(out_evhor[6] - out_evhor[7])]
     (wv36f+wv33b)
   }
@@ -268,7 +276,7 @@ fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,se
   # ------ Cross Validation ----------------
   cross_seq     <- seq(def_evhor[8],def_evhor[4]-max(ahead_t),round((def_evhor[4]-max(ahead_t)-def_evhor[7])/crossvalstps))
   crossval_runs <- foreach (k = cross_seq, .combine=c('rbind')) %do%{
-    co_evhor    <- fx_evhor(wm01,k,0,s02,seas_bloc_ws,0)
+    co_evhor    <- fx_evhor(wm01,k,0,ahead_t,s02,seas_bloc_ws,0)
     wm01cv      <- wm01[,co_evhor[2]:co_evhor[3]]                  # work matrix
     wm02cv      <- fx_seas(wm01cv,s01,s02,sum_of_h,co_evhor)       # in-sample seasonality pattern
     wm03cv      <- wm01cv[,(co_evhor[4]+1):co_evhor[6]]            # out-sample original load data
@@ -308,12 +316,9 @@ fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h
   wm02       <- fx_seas(wm01,s01,s02,sum_of_h,out_evhor)                  # in-sample seasonality pattern
   wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                      # out-sample original load data
   wm04       <- fx_unseas(wm01,wm02,s02,out_evhor)                        # in-out sample unseasonalised
-  fcst_mc    <- fx_fcst_armagarch(wm04,maxlag,ahead_t,out_evhor,sampling) # returns list with next ahead_t fcst and sd
-  crps_mc    <- fx_crpsgeneric(wm04,fcst_mc,def_evhor,sampling)
-  fcst_mcb    <- fx_fcst_kds(wm04,win_size,out_evhor,sampling)
-  crps_mcb    <- fx_crps_mc(wm04,fcst_mcb,out_evhor,sampling)
-  wm03fcst   <- fx_fcst_wm(fcst_mc,cvcojmean,out_evhor,wm02)
-  wm05       <- fx_crps_wm(crps_mc,cvcojmean,out_evhor,wm02)
+  fcst_mc    <- fx_fcst_armagarch(wm04,armalags,ahead_t,out_evhor,sampling) # returns list with next ahead_t fcst and sd
+  wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm02)
+  wm05       <- fx_crpsgeneric(wm04,fcst_mc,def_evhor,sampling)
   return(list(wm03fcst,wm05,wm04[,1:out_evhor[7]]))
 }
 
@@ -330,7 +335,8 @@ for (h in hrz_lim){
   #===========================================
   cat("[Ind] ")
   wm01_01    <- wm01_00[min(cus_list):length(cus_list),]
-  wl06       <- fx_int_fcst_kdcv(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
+  wl06kd     <- fx_int_fcst_kdcv(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
+  wl06ag     <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize)
   wv45       <- rowMeans(wl06[[1]])
   sd01       <- as.numeric(fx_sd_mymat(wl06[[3]]))
   
