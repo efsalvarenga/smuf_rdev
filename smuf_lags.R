@@ -32,12 +32,12 @@ data_size     <- importpar[5]
 #===========================================
 # Integrated Parameters
 #===========================================
-cus_list      <- seq(1,10)
+cus_list      <- seq(1,1000)
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
-hrz_lim       <- seq(0,1)*2537
+hrz_lim       <- seq(0,9)*2069
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 seas_bloc_ws  <- 6                       # Number of weeks used for calculating seasonality pattern (6 seems best)
-maxlag        <- 5                       # Max lags analysed for ARIMA fit (ARMA-GARCH model)
+maxlag        <- 10                      # Max lags analysed for ARIMA fit (ARMA-GARCH model)
 
 #===========================================
 # Functions Declarations: Modules
