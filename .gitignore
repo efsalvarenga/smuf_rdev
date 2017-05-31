@@ -72,5 +72,6 @@ ehthumbs.db
 Thumbs.db
 Icon*
 Ico*
+
 *.Rhistory
 *.RData
