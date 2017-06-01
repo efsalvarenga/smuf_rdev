@@ -318,7 +318,7 @@ fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h
   wm04       <- fx_unseas(wm01,wm02,s02,out_evhor)                        # in-out sample unseasonalised
   fcst_mc    <- fx_fcst_armagarch(wm04,armalags,ahead_t,out_evhor,sampling) # returns list with next ahead_t fcst and sd
   wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm02)
-  wm05       <- fx_crpsgeneric(wm04,fcst_mc,def_evhor,sampling)
+  wm05       <- fx_crpsgeneric(wm04,fcst_mc,out_evhor,sampling)
   return(list(wm03fcst,wm05,wm04[,1:out_evhor[7]]))
 }
 
