@@ -241,8 +241,8 @@ fx_optgrp_sdev <- function (wv42){
 #===========================================
 # Functions Declarations: Plots
 #===========================================
-fx_plt_mymat <- function(wm05){
-  plot(range(1:ncol(wm05)), range(min(wm05),max(wm05)), bty="n", type="n")
+fx_plt_mymat <- function(wm05,myrangey){
+  plot(range(1:ncol(wm05)), myrangey, bty="n", type="n")
   grid (NA,NULL, lty = 'dotted')
   par(mar=c(5,4,4,3.5), xpd=TRUE)
   colors   = rainbow(nrow(wm05))
