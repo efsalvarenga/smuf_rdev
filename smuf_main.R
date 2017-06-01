@@ -34,7 +34,7 @@ data_size     <- importpar[5]
 #===========================================
 # Integrated Parameters
 #===========================================
-cus_list      <- seq(1,10)
+cus_list      <- seq(1,30)
 frontierstp   <- 5                       # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
@@ -108,22 +108,26 @@ fx_fcst_armagarch <- function (wm04,armalags,ahead_t,out_evhor,sampling){
         next
       }
       arimaFit = tryCatch(arima(runvec, order=c(p, 0, q)),
-                          error=function( err ) FALSE,
+                          error=function(err) FALSE,
                           warning=function( err ) FALSE )
-      if( !is.logical( arimaFit ) ) {
+      if( !is.logical(arimaFit) ) {
         final.bic <- rbind(final.bic,c(p,q,AIC(arimaFit,k=log(out_evhor[7])),AIC(arimaFit)))
       } else {
         next
       }
     }
     final.ord <- final.bic[sort.list(final.bic[,3]), ]
-    # setting ARMA-GARCH spec (1,1)
-    spec = ugarchspec(variance.model=list(garchOrder=c(1,1)),
-                      mean.model=list(armaOrder=c(final.ord[1,1], final.ord[1,2]), include.mean=T),
-                      distribution.model="sged")
     # fitting ARMA-GARCH parameters and simulating
-    fit = tryCatch(ugarchfit(spec, runvec, solver = 'hybrid'),
-                   error=function(e) e, warning=function(w) w)
+    fit        = F
+    final.ordl = 0
+    while (!is.logical(fit) == F) {
+      spec = ugarchspec(variance.model=list(garchOrder=c(1,1)),
+                        mean.model=list(armaOrder=c(final.ord[(final.ordl+1),1], final.ord[(final.ordl+1),2]), include.mean=T),
+                        distribution.model="sged")
+      fit = tryCatch(ugarchfit(spec, runvec, solver = 'hybrid'),
+                     error=function(err) FALSE, warning=function(err) FALSE)
+      final.ordl = final.ordl+1
+    }
     sim1 = ugarchsim(fit, n.sim = max(ahead_t), m.sim = sampling)
     list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
   }
@@ -310,7 +314,7 @@ fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,se
   }
 }
 
-fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize){
+fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,armalags){
   out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,seas_bloc_ws,0)
   wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                       # work matrix
   wm02       <- fx_seas(wm01,s01,s02,sum_of_h,out_evhor)                  # in-sample seasonality pattern
@@ -336,7 +340,7 @@ for (h in hrz_lim){
   cat("[Ind] ")
   wm01_01    <- wm01_00[min(cus_list):length(cus_list),]
   wl06kd     <- fx_int_fcst_kdcv(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
-  wl06ag     <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize)
+  wl06ag     <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,armalags)
   wv45       <- rowMeans(wl06[[1]])
   sd01       <- as.numeric(fx_sd_mymat(wl06[[3]]))
   
