@@ -100,7 +100,7 @@ fx_fcst_kds <- function (wm04,win_size,def_evhor,sampling){
 
 fx_fcst_armagarch <- function (wm04,armalags,ahead_t,out_evhor,sampling){
   fcst_armagarch <- foreach (j = 1:nrow(wm04), .packages=c("rugarch")) %dopar% {
-    runvec       <- wm04[j,1:out_evhor[7]]
+    runvec       <- wm04[j,504:out_evhor[7]]
     # Defining ARMA lags
     final.bic <- matrix(nrow=0,ncol=4)
     for (p in 0:armalags[1]) for (q in 0:armalags[2]) {
