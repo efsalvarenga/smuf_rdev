@@ -34,17 +34,17 @@ data_size     <- importpar[5]
 #===========================================
 # Integrated Parameters
 #===========================================
-cus_list      <- seq(1,50)
+cus_list      <- seq(1,20)
 # frontierstp   <- 5                       # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
-hrz_lim       <- seq(0,2)*2069
+hrz_lim       <- seq(0,3)*2069
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 crossvalstps  <- 2                       # Steps used for multiple crossvalidation (Only KDE)
 seas_bloc_ws  <- 6                       # Number of weeks used for calculating seasonality pattern (6 seems best)
 sampling      <- 1024                    # For monte-carlo CRPS calculation
-armalags      <- c(6,6)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)
+armalags      <- c(8,8)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)
 
 #===========================================
 # Functions Declarations
@@ -61,18 +61,19 @@ for (h in hrz_lim){
   cat("\n\nStep",match(h,hrz_lim), "of",length(hrz_lim),"| Running BIG [h] LOOP with h =",h,"\n")
   wm01_01    <- wm01_00[min(cus_list):length(cus_list),]
   wl06kd     <- fx_int_fcst_kdcv(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
-  wl06ag     <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize)
+  wl06ag     <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,armalags)
   crpskdmath <- rbind(crpskdmath,colMeans(wl06kd[[2]]))
   crpsagmath <- rbind(crpsagmath,colMeans(wl06ag[[2]]))
   crpskdmatc <- rbind(crpskdmatc,rowMeans(wl06kd[[2]]))
   crpsagmatc <- rbind(crpsagmatc,rowMeans(wl06ag[[2]]))
+  cat("Average CRPS for KDS:",mean(wl06kd[[2]])," for ARMA-GARCH:",mean(wl06ag[[2]]),"\n")
   print(proc.time() - ptm)
 }
 
-# fx_plt_mymat(crpskdmath,c(0.05,0.5))
-# fx_plt_mymat(crpsagmath,c(0.05,0.5))
-# fx_plt_mymat(crpskdmatc,c(0.05,0.5))
-# fx_plt_mymat(crpsagmatc,c(0.05,0.5))
+fx_plt_mymat(crpskdmath,c(0.05,0.5))
+fx_plt_mymat(crpsagmath,c(0.05,0.5))
+fx_plt_mymat(crpskdmatc,c(0,0.5))
+fx_plt_mymat(crpsagmatc,c(0,0.5))
 
 crpscompare = list(crpskdmath,crpsagmath,crpskdmatc,crpsagmatc)
 
