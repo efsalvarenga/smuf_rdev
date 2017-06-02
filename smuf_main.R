@@ -255,8 +255,8 @@ fx_plt_mymat <- function(wm05,myrangey){
   for (i in 1:nrow(wm05)){
     lines(wm05[i,], type="l", lwd=1.5, lty=linetype[1],col=colors[i])
   }
-  wm05mean <- colMeans(wm05)
-  lines(wm05mean, type="l", lwd=3, lty=linetype[2])
+  # wm05mean <- colMeans(wm05)
+  # lines(wm05mean, type="l", lwd=3, lty=linetype[2])
 }
 
 fx_plt_rnd_vs_opt <- function(bighlp,myrangex,myrangey,xunit) {

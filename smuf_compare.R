@@ -69,10 +69,8 @@ for (h in hrz_lim){
   crpskdmatc <- rbind(crpskdmatc,rowMeans(wl06kd[[2]]))
   crpsagmatc <- rbind(crpsagmatc,rowMeans(wl06ag[[2]]))
   cat("Average CRPS for KDS:",mean(wl06kd[[2]])," for ARMA-GARCH:",mean(wl06ag[[2]]),"\n")
-  fx_plt_mymat(crpskdmath,c(0.05,0.5))
-  fx_plt_mymat(crpsagmath,c(0.05,0.5))
-  fx_plt_mymat(crpskdmatc,c(0,0.5))
-  fx_plt_mymat(crpsagmatc,c(0,0.5))
+  fx_plt_mymat(rbind(colMeans(crpskdmath),colMeans(crpsagmath)),c(0.05,0.15))
+  fx_plt_mymat(rbind(colMeans(crpskdmatc),colMeans(crpsagmatc)),c(0.0,0.2))
   print(proc.time() - ptm)
 }
 
