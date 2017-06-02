@@ -44,7 +44,7 @@ maxlag        <- 10                      # Max lags analysed for ARIMA fit (ARMA
 #===========================================
 fx_lags_armagarch <- function (wm04,maxlag,out_evhor){
   lags_armagarch <- foreach (j = 1:nrow(wm04), .packages=c("rugarch"), .combine=c("rbind")) %dopar% {
-    runvec       <- wm04[j,1:out_evhor[7]]
+    runvec       <- wm04[j,841:out_evhor[7]]
     # Defining ARMA lags
     final.bic <- matrix(nrow=0,ncol=4)
     for (p in 0:maxlag) for (q in 0:maxlag) {
