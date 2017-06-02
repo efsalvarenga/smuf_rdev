@@ -58,6 +58,8 @@ crpsagmath <- matrix(nrow=0,ncol=max(ahead_t))
 crpskdmatc <- matrix(nrow=0,ncol=max(cus_list))
 crpsagmatc <- matrix(nrow=0,ncol=max(cus_list))
 for (h in hrz_lim){
+  cl  <- makeCluster(detectCores())   # reset parallel workers
+  registerDoParallel(cl)
   cat("\n\nStep",match(h,hrz_lim), "of",length(hrz_lim),"| Running BIG [h] LOOP with h =",h,"\n")
   wm01_01    <- wm01_00[min(cus_list):length(cus_list),]
   wl06kd     <- fx_int_fcst_kdcv(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
@@ -67,13 +69,12 @@ for (h in hrz_lim){
   crpskdmatc <- rbind(crpskdmatc,rowMeans(wl06kd[[2]]))
   crpsagmatc <- rbind(crpsagmatc,rowMeans(wl06ag[[2]]))
   cat("Average CRPS for KDS:",mean(wl06kd[[2]])," for ARMA-GARCH:",mean(wl06ag[[2]]),"\n")
+  fx_plt_mymat(crpskdmath,c(0.05,0.5))
+  fx_plt_mymat(crpsagmath,c(0.05,0.5))
+  fx_plt_mymat(crpskdmatc,c(0,0.5))
+  fx_plt_mymat(crpsagmatc,c(0,0.5))
   print(proc.time() - ptm)
 }
-
-fx_plt_mymat(crpskdmath,c(0.05,0.5))
-fx_plt_mymat(crpsagmath,c(0.05,0.5))
-fx_plt_mymat(crpskdmatc,c(0,0.5))
-fx_plt_mymat(crpsagmatc,c(0,0.5))
 
 crpscompare = list(crpskdmath,crpsagmath,crpskdmatc,crpsagmatc)
 
