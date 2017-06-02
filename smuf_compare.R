@@ -5,7 +5,7 @@
 #         efsa@bath.edu
 # Created in 10/Feb/17
 #-------------------------------------------
-# smuf_main combined functions optim & fcst
+# smuf_compare arma-garch vs kds [individual]
 #===========================================
 
 #===========================================

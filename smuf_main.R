@@ -117,6 +117,7 @@ fx_fcst_armagarch <- function (wm04,armalags,ahead_t,out_evhor,sampling){
       }
     }
     final.ord <- final.bic[sort.list(final.bic[,3]), ]
+    if (nrow(final.ord)==0) {final.ord <- rbind(final.ord,c(1,1,0,0))}
     # fitting ARMA-GARCH parameters and simulating
     fit        = F
     final.ordl = 0
