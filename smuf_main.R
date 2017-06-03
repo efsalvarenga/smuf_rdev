@@ -87,8 +87,8 @@ fx_unseas <- function (wm01,wm02,s02,def_evhor){
   return(wm04)
 }
 
-fx_seas2   <- function (wm01,s01,s02,sum_of_h,def_evhor){
-  wm02L    <- foreach (j = 1:nrow(wm01), .combine=c("rbind"), .packages=c("forecast")) %dopar% {
+fx_seas2  <- function (wm01,s01,s02,sum_of_h,def_evhor){
+  wm12    <- foreach (j = 1:nrow(wm01), .combine=c("rbind"), .packages=c("forecast")) %dopar% {
     wv31i  <- wm01[j,1:def_evhor[7]]
     wv32i  <- decompose(msts(wv31i,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)))
     wv32is <- wv32i$seasonal[1:(s02)]
@@ -98,22 +98,21 @@ fx_seas2   <- function (wm01,s01,s02,sum_of_h,def_evhor){
     wv32ir <- wv32ir[!is.na(wv32ir)]
     c(wv32is,wv32ir,wv32it)
   }
-  sepp  <- s02+(ncol(wm02L)-s02)/2
-  wm02s <- wm02L[,1:s02]
-  wm02r <- wm02L[,(s02+1):sepp]
-  wm02t <- wm02L[,(sepp+1):ncol(wm02L)]
-  return(list(wm02s,wm02r,wm02t))
+  sepp  <- s02+(ncol(wm12)-s02)/2
+  wm12s <- wm12[,1:s02]
+  wm12r <- wm12[,(s02+1):sepp]
+  wm12t <- wm12[,(sepp+1):ncol(wm12)]
+  return(list(wm12s,wm12r,wm12t))
 }
 
 fx_unseas2 <- function (wm01,wm02,s02,def_evhor){
-  wm04     <- foreach (j = 1:nrow(wm01), .combine=c("rbind")) %dopar% {
-    wv35   <- wm02[[2]][j,]
+  wm14     <- foreach (j = 1:nrow(wm01), .combine=c("rbind")) %dopar% {
     wv33b  <- wm02[[1]][j,1:(def_evhor[6] - def_evhor[7])]
     wv33c  <- rep(mean(tail(wm02[[3]][j,],(def_evhor[6] - def_evhor[7]))),(def_evhor[6] - def_evhor[7]))
     wv36   <- tail(wm01[j,],(def_evhor[6] - def_evhor[7])) - wv33b - wv33c
-    c(wv35,wv36)
+    wv36
   }
-  return(wm04)
+  return(wm14)
 }
 
 fx_fcst_kds <- function (wm04,win_size,def_evhor,sampling){
@@ -346,10 +345,10 @@ fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,se
 
 fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,armalags){
   out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,seas_bloc_ws,0)
-  wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                       # work matrix
-  wm02       <- fx_seas(wm01,s01,s02,sum_of_h,out_evhor)                  # in-sample seasonality pattern
-  wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                      # out-sample original load data
-  wm04       <- fx_unseas(wm01,wm02,s02,out_evhor)                        # in-out sample unseasonalised
+  wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                         # work matrix
+  wl02       <- fx_seas2(wm01,s01,s02,sum_of_h,out_evhor)                   # in-sample seasonality pattern
+  wm13       <- fx_unseas2(wm01,wl02,s02,out_evhor)                         # out-sample removed trend and seas from load data
+  wm14       <- wl12[[2]]                                                   # in-sample noise
   fcst_mc    <- fx_fcst_armagarch(wm04,armalags,ahead_t,out_evhor,sampling) # returns list with next ahead_t fcst and sd
   wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm02)
   wm05       <- fx_crpsgeneric(wm04,fcst_mc,out_evhor,sampling)
