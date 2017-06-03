@@ -105,6 +105,17 @@ fx_seas2   <- function (wm01,s01,s02,sum_of_h,def_evhor){
   return(list(wm02s,wm02r,wm02t))
 }
 
+fx_unseas2 <- function (wm01,wm02,s02,def_evhor){
+  wm04     <- foreach (j = 1:nrow(wm01), .combine=c("rbind")) %dopar% {
+    wv35   <- wm02[[2]][j,]
+    wv33b  <- wm02[[1]][j,1:(def_evhor[6] - def_evhor[7])]
+    wv33c  <- rep(mean(tail(wm02[[3]][j,],(def_evhor[6] - def_evhor[7]))),(def_evhor[6] - def_evhor[7]))
+    wv36   <- tail(wm01[j,],(def_evhor[6] - def_evhor[7])) - wv33b - wv33c
+    c(wv35,wv36)
+  }
+  return(wm04)
+}
+
 fx_fcst_kds <- function (wm04,win_size,def_evhor,sampling){
   fcst_mc2    <- foreach (j = 1:nrow(wm04)) %dopar% {
     denssmall <- density(wm04[j,(def_evhor[7] - win_size[1] + 1):(def_evhor[7])])
@@ -118,7 +129,7 @@ fx_fcst_kds <- function (wm04,win_size,def_evhor,sampling){
 
 fx_fcst_armagarch <- function (wm04,armalags,ahead_t,out_evhor,sampling){
   fcst_armagarch <- foreach (j = 1:nrow(wm04), .packages=c("rugarch")) %dopar% {
-    runvec       <- wm04[j,841:out_evhor[7]]
+    runvec       <- wm04[j,1:out_evhor[7]]
     # Defining ARMA lags
     final.bic <- matrix(nrow=0,ncol=4)
     for (p in 0:armalags[1]) for (q in 0:armalags[2]) {
