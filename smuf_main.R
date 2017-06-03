@@ -87,6 +87,24 @@ fx_unseas <- function (wm01,wm02,s02,def_evhor){
   return(wm04)
 }
 
+fx_seas2   <- function (wm01,s01,s02,sum_of_h,def_evhor){
+  wm02L    <- foreach (j = 1:nrow(wm01), .combine=c("rbind"), .packages=c("forecast")) %dopar% {
+    wv31i  <- wm01[j,1:def_evhor[7]]
+    wv32i  <- decompose(msts(wv31i,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)))
+    wv32is <- wv32i$seasonal[1:(s02)]
+    wv32it <- wv32i$trend
+    wv32it <- wv32it[!is.na(wv32it)]
+    wv32ir <- wv32i$random
+    wv32ir <- wv32ir[!is.na(wv32ir)]
+    c(wv32is,wv32ir,wv32it)
+  }
+  sepp  <- s02+(ncol(wm02L)-s02)/2
+  wm02s <- wm02L[,1:s02]
+  wm02r <- wm02L[,(s02+1):sepp]
+  wm02t <- wm02L[,(sepp+1):ncol(wm02L)]
+  return(list(wm02s,wm02r,wm02t))
+}
+
 fx_fcst_kds <- function (wm04,win_size,def_evhor,sampling){
   fcst_mc2    <- foreach (j = 1:nrow(wm04)) %dopar% {
     denssmall <- density(wm04[j,(def_evhor[7] - win_size[1] + 1):(def_evhor[7])])
