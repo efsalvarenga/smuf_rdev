@@ -90,12 +90,10 @@ fx_unseas <- function (wm01,wm02,s02,def_evhor){
 fx_seas2  <- function (wm01,s01,s02,sum_of_h,def_evhor){
   wm12    <- foreach (j = 1:nrow(wm01), .combine=c("rbind"), .packages=c("forecast")) %dopar% {
     wv31i  <- wm01[j,1:def_evhor[7]]
-    wv32i  <- decompose(msts(wv31i,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)))
-    wv32is <- wv32i$seasonal[1:(s02)]
-    wv32it <- wv32i$trend
-    wv32it <- wv32it[!is.na(wv32it)]
-    wv32ir <- wv32i$random
-    wv32ir <- wv32ir[!is.na(wv32ir)]
+    wv32i  <- stl(msts(wv31i,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)), s.window="periodic", robust=TRUE)
+    wv32is <- wv32i$time.series[1:s02,1]
+    wv32it <- wv32i$time.series[,2]
+    wv32ir <- wv32i$time.series[,3]
     c(wv32is,wv32ir,wv32it)
   }
   sepp  <- s02+(ncol(wm12)-s02)/2
@@ -108,9 +106,8 @@ fx_seas2  <- function (wm01,s01,s02,sum_of_h,def_evhor){
 fx_unseas2 <- function (wm01,wm02,s02,def_evhor){
   wm14     <- foreach (j = 1:nrow(wm01), .combine=c("rbind")) %dopar% {
     wv33b  <- wm02[[1]][j,1:(def_evhor[6] - def_evhor[7])]
-    wv33c  <- rep(mean(tail(wm02[[3]][j,],(def_evhor[6] - def_evhor[7]))),(def_evhor[6] - def_evhor[7]))
-    wv36   <- tail(wm01[j,],(def_evhor[6] - def_evhor[7])) - wv33b - wv33c
-    wv36
+    wv33c  <- rep(mean(tail(wm02[[3]][j,],1)),(def_evhor[6] - def_evhor[7]))
+    wv33b + wv33c
   }
   return(wm14)
 }
@@ -126,9 +123,9 @@ fx_fcst_kds <- function (wm04,win_size,def_evhor,sampling){
   return(fcst_mc2)
 }
 
-fx_fcst_armagarch <- function (wm04,armalags,ahead_t,out_evhor,sampling){
-  fcst_armagarch <- foreach (j = 1:nrow(wm04), .packages=c("rugarch")) %dopar% {
-    runvec       <- wm04[j,1:out_evhor[7]]
+fx_fcst_armagarch <- function (wm14,armalags,ahead_t,out_evhor,sampling){
+  fcst_armagarch <- foreach (j = 1:nrow(wm14), .packages=c("rugarch")) %dopar% {
+    runvec       <- wm14[j,]
     # Defining ARMA lags
     final.bic <- matrix(nrow=0,ncol=4)
     for (p in 0:armalags[1]) for (q in 0:armalags[2]) {
@@ -173,10 +170,10 @@ fx_crps_mc <- function (wm04,fcst_mc,def_evhor,sampling){
   return(crps_mc2)
 }
 
-fx_crpsgeneric <- function (wm04,fcst_mc,def_evhor,sampling){
-  crps_mc2 <- foreach (j = 1:nrow(wm04), .combine=c("rbind")) %:%
-    foreach (i = (def_evhor[4]+1):def_evhor[6], .combine=c("cbind"), .packages=c("verification")) %dopar% {
-      wv35 <- crps(rep(wm04[j,i],sampling),data.frame(fcst_mc[[j]][[1]][(i-def_evhor[4]),],fcst_mc[[j]][[2]][(i-def_evhor[4]),]))$CRPS
+fx_crpsgeneric <- function (wm03,wm13,wm14,fcst_mc,def_evhor,sampling){
+  crps_mc2 <- foreach (j = 1:nrow(wm14), .combine=c("rbind")) %:%
+    foreach (i = 1:ncol(wm03), .combine=c("cbind"), .packages=c("verification")) %dopar% {
+      wv35 <- crps(rep((wm03[j,i]-wm13[j,i]),sampling),data.frame(fcst_mc[[j]][[1]][i,],fcst_mc[[j]][[2]][i,]))$CRPS
       c(wv35)
     }
   return(crps_mc2)
@@ -214,11 +211,11 @@ fx_fcst_wm <- function(fcst_mc,cvcojmean,out_evhor,wm02){
   }
 }
 
-fx_fcstgeneric <- function(fcst_mc,out_evhor,wm02){
-  fcst_co <- foreach (j = 1:nrow(wm02),.combine=c("rbind")) %dopar% {
+fx_fcstgeneric <- function(fcst_mc,out_evhor,wm13){
+  fcst_co <- foreach (j = 1:nrow(wm13),.combine=c("rbind")) %dopar% {
     wv36f <- rowMeans(fcst_mc[[j]][[1]])
-    wv33b <- wm02[j,1:(out_evhor[6] - out_evhor[7])]
-    (wv36f+wv33b)
+    wv36g <- wm13[j,]
+    (wv36f+wv36g)
   }
 }
 
@@ -346,12 +343,13 @@ fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,se
 fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,armalags){
   out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,seas_bloc_ws,0)
   wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                         # work matrix
-  wl02       <- fx_seas2(wm01,s01,s02,sum_of_h,out_evhor)                   # in-sample seasonality pattern
-  wm13       <- fx_unseas2(wm01,wl02,s02,out_evhor)                         # out-sample removed trend and seas from load data
-  wm14       <- wl12[[2]]                                                   # in-sample noise
-  fcst_mc    <- fx_fcst_armagarch(wm04,armalags,ahead_t,out_evhor,sampling) # returns list with next ahead_t fcst and sd
-  wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm02)
-  wm05       <- fx_crpsgeneric(wm04,fcst_mc,out_evhor,sampling)
+  wl02       <- fx_seas2(wm01,s01,s02,sum_of_h,out_evhor)                   # in-sample seasonality pattern (s,r,t)
+  wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                        # out-sample original load data
+  wm13       <- fx_unseas2(wm01,wl02,s02,out_evhor)                         # out-sample estimated trend + seas
+  wm14       <- wl02[[2]]                                                   # in-sample noise
+  fcst_mc    <- fx_fcst_armagarch(wm14,armalags,ahead_t,out_evhor,sampling) # returns list with next ahead_t fcst and sd
+  wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm13)
+  wm05       <- fx_crpsgeneric(wm03,wm13,wm14,fcst_mc,out_evhor,sampling)
   return(list(wm03fcst,wm05,wm04[,1:out_evhor[7]]))
 }
 
