@@ -36,15 +36,15 @@ cus_list      <- seq(1,1000)
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
 hrz_lim       <- seq(0,9)*2069
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
-seas_bloc_ws  <- 6                       # Number of weeks used for calculating seasonality pattern (6 seems best)
+is_wins_weeks <- 12                      # Number of weeks used for in-sample (KDE uses win_size) & seasonality
 maxlag        <- 10                      # Max lags analysed for ARIMA fit (ARMA-GARCH model)
 
 #===========================================
 # Functions Declarations
 #===========================================
-fx_lags_armagarch <- function (wm04,maxlag,out_evhor){
-  lags_armagarch <- foreach (j = 1:nrow(wm04), .packages=c("rugarch"), .combine=c("rbind")) %dopar% {
-    runvec       <- wm04[j,841:out_evhor[7]]
+fx_lags_armagarch <- function (wm14,maxlag,out_evhor){
+  lags_armagarch  <- foreach (j = 1:nrow(wm14), .packages=c("rugarch"), .combine=c("rbind")) %dopar% {
+    runvec        <- wm14[j,]
     # Defining ARMA lags
     final.bic <- matrix(nrow=0,ncol=4)
     for (p in 0:maxlag) for (q in 0:maxlag) {
@@ -80,13 +80,14 @@ for (h in hrz_lim) {
   cl  <- makeCluster(detectCores())   # reset parallel workers
   registerDoParallel(cl)
   cat("\nStep",match(h,hrz_lim), "of",length(hrz_lim),"| Running BIG [h] LOOP with h =",h)
-  out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,seas_bloc_ws,0)
+  out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
   wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                       # work matrix
   # wm01       <- wm01[-(which(!is.na(match(rowMeans(wm01), 0)))),]       # remove customers with no data (not in use)  
-  wm02       <- fx_seas(wm01,s01,s02,sum_of_h,out_evhor)                  # in-sample seasonality pattern
-  wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                      # out-sample original load data
-  wm04       <- fx_unseas(wm01,wm02,s02,out_evhor)                        # in-out sample unseasonalised
-  hlag       <- fx_lags_armagarch(wm04,maxlag,out_evhor)
+  wl02       <- fx_seas2(wm01,s01,s02,sum_of_h,out_evhor)                   # in-sample seasonality pattern (s,r,t)
+  wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                        # out-sample original load data
+  wm13       <- fx_unseas2(wm01,wl02,s02,out_evhor)                         # out-sample estimated trend + seas
+  wm14       <- wl02[[2]]                                                   # in-sample noise
+  hlag       <- fx_lags_armagarch(wm14,maxlag,out_evhor)
   hlags      <- rbind(hlags,hlag)
   cat("\nlags",hlag[1],hlag[2],"customers",hlag[3],"\n")
   saveRDS(hlags,  file="smuf_lags-arma.rds")
