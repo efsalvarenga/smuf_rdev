@@ -68,14 +68,14 @@ fx_lags_armagarch <- function (wm14,maxlag,out_evhor){
     }
     armapar
   }
-  return(c(max(lags_armagarch[,1]),max(lags_armagarch[,2]),nrow(lags_armagarch)))
+  return(lags_armagarch)
 }
 
 #===========================================
 # BIG [h] LOOP Start
 #===========================================
 wm01_01    <- wm01_00[min(cus_list):length(cus_list),]
-hlags      <- matrix(nrow=0,ncol=3)
+hlags      <- matrix(nrow=0,ncol=2)
 for (h in hrz_lim) {
   cl  <- makeCluster(detectCores())   # reset parallel workers
   registerDoParallel(cl)
