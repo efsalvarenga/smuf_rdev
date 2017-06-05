@@ -42,16 +42,16 @@ hrz_lim       <- seq(0,1)*2069
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 crossvalstps  <- 2                       # Steps used for multiple crossvalidation (Only KDE)
-seas_bloc_ws  <- 6                       # Number of weeks used for calculating seasonality pattern (6 seems best)
+is_wins_weeks  <- 12                     # Number of weeks used for in-sample (KDE uses win_size) & seasonality
 sampling      <- 1024                    # For monte-carlo CRPS calculation
 armalags      <- c(2,3)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)
 
 #===========================================
 # Functions Declarations: Modules
 #===========================================
-fx_evhor <- function (wm01_01,h,in_sample_fr,ahead_t,s02,seas_bloc_ws,crossvalsize){
+fx_evhor <- function (wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,crossvalsize){
   event_horizon <- ncol(wm01_01) * in_sample_fr + 1 + h - s02
-  in_sample_ini <- event_horizon - min((seas_bloc_ws),(event_horizon %/% s02)) * s02 + 1
+  in_sample_ini <- event_horizon - min((is_wins_weeks),(event_horizon %/% s02)) * s02 + 1
   outsample_end <- event_horizon + max(ahead_t)
   in_sample_siz <- event_horizon - in_sample_ini + 1
   outsample_siz <- outsample_end - event_horizon
@@ -251,7 +251,7 @@ fx_sd_mymat <- function (mymat){
 fx_optgrp_crps <- function (wv42){
   if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
     fv01   <- rbind(wv42 %*% wm01_01 / sum(wv42),0)
-    fl02   <- fx_int_fcst_kdcv(fv01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,F)
+    fl02   <- fx_int_fcst_kdcv(fv01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,F)
     result <- as.numeric(fl02[[2]][1,1])
   } else {result <- 10}
   return (result)
@@ -259,7 +259,7 @@ fx_optgrp_crps <- function (wv42){
 
 fx_optgrp_sdev <- function (wv42){
   if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
-    sd_evhor <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,seas_bloc_ws,crossvalsize)
+    sd_evhor <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,crossvalsize)
     fv01     <- as.numeric(wv42 %*% wm01_01[,sd_evhor[2]:sd_evhor[1]] / sum(wv42))
     fv02     <- decompose(msts(fv01,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)))
     fv03     <- fv01 - fv02$seasonal
@@ -300,13 +300,13 @@ fx_plt_rnd_vs_opt <- function(bighlp,myrangex,myrangey,xunit) {
 #===========================================
 # Functions Declarations: Integrations
 #===========================================
-fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,fcst_run){
-  def_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,seas_bloc_ws,crossvalsize)
+fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run){
+  def_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,crossvalsize)
   wm01       <- wm01_01[,def_evhor[2]:def_evhor[3]]                # work matrix
   # ------ Cross Validation ----------------
   cross_seq     <- seq(def_evhor[8],def_evhor[4]-max(ahead_t),round((def_evhor[4]-max(ahead_t)-def_evhor[7])/crossvalstps))
   crossval_runs <- foreach (k = cross_seq, .combine=c('rbind')) %do%{
-    co_evhor    <- fx_evhor(wm01,k,0,ahead_t,s02,seas_bloc_ws,0)
+    co_evhor    <- fx_evhor(wm01,k,0,ahead_t,s02,is_wins_weeks,0)
     wm01cv      <- wm01[,co_evhor[2]:co_evhor[3]]                  # work matrix
     wm02cv      <- fx_seas(wm01cv,s01,s02,sum_of_h,co_evhor)       # in-sample seasonality pattern
     wm03cv      <- wm01cv[,(co_evhor[4]+1):co_evhor[6]]            # out-sample original load data
@@ -328,7 +328,7 @@ fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,se
   }
   # ------ Forecasting & Verification ------
   if (fcst_run == T) {
-    out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,seas_bloc_ws,0)
+    out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
     wm02       <- fx_seas(wm01,s01,s02,sum_of_h,out_evhor)           # in-sample seasonality pattern
     wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]               # out-sample original load data
     wm04       <- fx_unseas(wm01,wm02,s02,out_evhor)                 # in-out sample unseasonalised
@@ -340,8 +340,8 @@ fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,se
   }
 }
 
-fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,armalags){
-  out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,seas_bloc_ws,0)
+fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags){
+  out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
   wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                         # work matrix
   wl02       <- fx_seas2(wm01,s01,s02,sum_of_h,out_evhor)                   # in-sample seasonality pattern (s,r,t)
   wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                        # out-sample original load data
@@ -350,7 +350,7 @@ fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h
   fcst_mc    <- fx_fcst_armagarch(wm14,armalags,ahead_t,out_evhor,sampling) # returns list with next ahead_t fcst and sd
   wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm13)
   wm05       <- fx_crpsgeneric(wm03,wm13,wm14,fcst_mc,out_evhor,sampling)
-  return(list(wm03fcst,wm05,wm04[,1:out_evhor[7]]))
+  return(list(wm03fcst,wm05,wm14))
 }
 
 #===========================================
@@ -366,8 +366,8 @@ for (h in hrz_lim){
   #===========================================
   cat("[Ind] ")
   wm01_01    <- wm01_00[min(cus_list):length(cus_list),]
-  wl06kd     <- fx_int_fcst_kdcv(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
-  wl06ag     <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,armalags)
+  wl06kd     <- fx_int_fcst_kdcv(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,T)
+  wl06ag     <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags)
   wv45       <- rowMeans(wl06[[1]])
   sd01       <- as.numeric(fx_sd_mymat(wl06[[3]]))
   
@@ -377,7 +377,7 @@ for (h in hrz_lim){
   cat("[Rnd] ")
   wm01_02l   <- fx_rndgrp(wm01_01,frontierstp)
   wm01_02    <- wm01_02l[[1]] / rowSums(wm01_02l[[2]])
-  wl06rnd    <- fx_int_fcst_kdcv(wm01_02,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
+  wl06rnd    <- fx_int_fcst_kdcv(wm01_02,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,T)
   wv45rnd    <- as.numeric(rowMeans(wl06rnd[[1]]) * rowSums(wm01_02l[[2]]))
   sd01rnd    <- as.numeric(fx_sd_mymat(wl06rnd[[3]]))
   cr01rnd    <- rowMeans(wl06rnd[[2]])
@@ -402,7 +402,7 @@ for (h in hrz_lim){
   opt_max_cusd<- max(wv46)
   wm01_03l    <- list(optgrp_sdev %*% wm01_01, optgrp_sdev)
   wm01_03     <- wm01_03l[[1]] / rowSums(wm01_03l[[2]])
-  wl06optsdev <- fx_int_fcst_kdcv(wm01_03,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
+  wl06optsdev <- fx_int_fcst_kdcv(wm01_03,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,T)
   wv45optsdev <- as.numeric(rowMeans(wl06optsdev[[1]]) * rowSums(wm01_03l[[2]]))
   sd01optsdev <- as.numeric(fx_sd_mymat(wl06optsdev[[1]]))
   cr01optsdev <- rowMeans(wl06optsdev[[2]])
@@ -441,7 +441,7 @@ for (h in hrz_lim){
   opt_max_cusd<- max(wv46)
   wm01_04l    <- list(optgrp_crps %*% wm01_01, optgrp_crps)
   wm01_04     <- wm01_04l[[1]] / rowSums(wm01_04l[[2]])
-  wl06optcrps <- fx_int_fcst_kdcv(wm01_04,h,in_sample_fr,s01,s02,sum_of_h,win_size,seas_bloc_ws,crossvalsize,T)
+  wl06optcrps <- fx_int_fcst_kdcv(wm01_04,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,T)
   wv45optcrps <- as.numeric(rowMeans(wl06optcrps[[1]]) * rowSums(wm01_04l[[2]]))
   sd01optcrps <- as.numeric(fx_sd_mymat(wl06optcrps[[1]]))
   cr01optcrps <- rowMeans(wl06optcrps[[2]])
