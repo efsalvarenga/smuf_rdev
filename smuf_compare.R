@@ -34,7 +34,7 @@ data_size     <- importpar[5]
 #===========================================
 # Integrated Parameters
 #===========================================
-cus_list      <- seq(200,500)
+cus_list      <- seq(370,425)
 # frontierstp   <- 5                       # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
@@ -56,8 +56,8 @@ armalags      <- c(5,5)                  # Max lags for ARIMA fit in ARMA-GARCH 
 #===========================================
 crpskdmath <- matrix(nrow=0,ncol=max(ahead_t))
 crpsagmath <- matrix(nrow=0,ncol=max(ahead_t))
-crpskdmatc <- matrix(nrow=0,ncol=max(cus_list))
-crpsagmatc <- matrix(nrow=0,ncol=max(cus_list))
+crpskdmatc <- matrix(nrow=0,ncol=(max(cus_list)-min(cus_list)+1))
+crpsagmatc <- matrix(nrow=0,ncol=(max(cus_list)-min(cus_list)+1))
 for (h in hrz_lim){
   cl  <- makeCluster(detectCores())   # reset parallel workers
   registerDoParallel(cl)
