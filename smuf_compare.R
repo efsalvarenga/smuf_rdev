@@ -34,17 +34,17 @@ data_size     <- importpar[5]
 #===========================================
 # Integrated Parameters
 #===========================================
-cus_list      <- seq(1,100)
+cus_list      <- seq(1,1000)
 # frontierstp   <- 5                       # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
-hrz_lim       <- seq(0,2)*2069
+hrz_lim       <- seq(0,1)*2069
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 crossvalstps  <- 2                       # Steps used for multiple crossvalidation (Only KDE)
 is_wins_weeks <- 12                      # Number of weeks used for in-sample (KDE uses win_size) & seasonality
 sampling      <- 1024                    # For monte-carlo CRPS calculation
-armalags      <- c(8,8)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)
+armalags      <- c(5,5)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)
 
 #===========================================
 # Functions Declarations
@@ -76,9 +76,9 @@ for (h in hrz_lim){
   legend('topright', inset=c(0,0), legend = c("KDS","ARMA-GARCH"),
          lty=1, col=rainbow(2), bty='n', cex=.75, title="Grouping")
   print(proc.time() - ptm)
+  crpscompare = list(crpskdmath,crpsagmath,crpskdmatc,crpsagmatc)
+  saveRDS(crpscompare,  file="smuf_compare-kd_ag.rds")
 }
-
-crpscompare = list(crpskdmath,crpsagmath,crpskdmatc,crpsagmatc)
 
 #===========================================
 # Outputs
