@@ -89,7 +89,7 @@ for (h in hrz_lim) {
   wm14       <- wl02[[2]]                                                   # in-sample noise
   hlag       <- fx_lags_armagarch(wm14,maxlag,out_evhor)
   hlags      <- rbind(hlags,hlag)
-  cat("\nlags",hlag[1],hlag[2],"customers",hlag[3],"\n")
+  # cat("\nlags",hlag[1],hlag[2],"customers",hlag[3],"\n")
   saveRDS(hlags,  file="smuf_lags-arma.rds")
   print(proc.time() - ptm)
 }
