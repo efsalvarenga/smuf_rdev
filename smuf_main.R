@@ -37,6 +37,7 @@ data_size     <- importpar[5]
 cus_list      <- seq(1,30)
 frontierstp   <- 5                       # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
+cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
 hrz_lim       <- seq(0,1)*2069
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
@@ -123,7 +124,18 @@ fx_fcst_kds <- function (wm04,win_size,def_evhor,sampling){
   return(fcst_mc2)
 }
 
-fx_fcst_armagarch <- function (wm14,armalags,ahead_t,out_evhor,sampling){
+fx_fcst_kds_quickvector <- function (runvec,win_size,def_evhor,sampling){
+  denssmall  <- density(runvec[(def_evhor[7] - win_size[1] + 1):(def_evhor[7])])
+  denslarge  <- density(runvec[(def_evhor[7] - win_size[2] + 1):(def_evhor[7])])
+  fcstsmall  <- sample(denssmall$x, sampling, replace=TRUE, prob=denssmall$y)
+  fcstlarge  <- sample(denslarge$x, sampling, replace=TRUE, prob=denslarge$y)
+  kdsim.mean <- rbind(t(replicate(cross_overh,fcstsmall)),t(replicate((max(ahead_t)-cross_overh),fcstlarge)))
+  kdsim.desv <- rbind(t(replicate(cross_overh,rep(denssmall$bw,sampling))),t(replicate((max(ahead_t)-cross_overh),rep(denslarge$bw,sampling))))
+  fcst_kds_qv <- list(kdsim.mean,kdsim.desv)
+  return(fcst_kds_qv)
+}
+
+fx_fcst_armagarch <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling){
   fcst_armagarch <- foreach (j = 1:nrow(wm14), .packages=c("rugarch")) %dopar% {
     runvec       <- wm14[j,]
     # Defining ARMA lags
@@ -142,20 +154,24 @@ fx_fcst_armagarch <- function (wm14,armalags,ahead_t,out_evhor,sampling){
       }
     }
     final.ord <- final.bic[sort.list(final.bic[,3]), ]
-    if (nrow(final.ord)==0) {final.ord <- rbind(final.ord,c(1,1,0,0))}
-    # fitting ARMA-GARCH parameters and simulating
-    fit        = F
-    final.ordl = 0
-    while (!is.logical(fit) == F) {
-      spec = ugarchspec(variance.model=list(garchOrder=c(1,1)),
-                        mean.model=list(armaOrder=c(final.ord[(final.ordl+1),1], final.ord[(final.ordl+1),2]), include.mean=T),
-                        distribution.model="sged")
-      fit = tryCatch(ugarchfit(spec, runvec, solver = 'hybrid'),
-                     error=function(err) FALSE, warning=function(err) FALSE)
-      final.ordl = final.ordl+1
+    if (nrow(final.ord)==0) {             # if no ARMA(p,q) fits, go with kde_quickvector
+      fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling)
+    } else {                              # fitting ARMA-GARCH parameters and simulating
+      fit        = F
+      final.ordl = 0
+      while (!is.logical(fit) == F) {
+        spec = ugarchspec(variance.model=list(garchOrder=c(1,1)),
+                          mean.model=list(armaOrder=c(final.ord[(final.ordl+1),1], final.ord[(final.ordl+1),2]), include.mean=T),
+                          distribution.model="sged")
+        fit = tryCatch(ugarchfit(spec, runvec, solver = 'hybrid'),
+                       error=function(err) FALSE, warning=function(err) FALSE)
+        if(final.ordl <= nrow(final.ord)) {final.ordl = final.ordl+1}
+        next
+      }
+      sim1 = ugarchsim(fit, n.sim = max(ahead_t), m.sim = sampling)
+      list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
     }
-    sim1 = ugarchsim(fit, n.sim = max(ahead_t), m.sim = sampling)
-    list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
+    
   }
   return(fcst_armagarch)
 }
@@ -347,7 +363,7 @@ fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h
   wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                        # out-sample original load data
   wm13       <- fx_unseas2(wm01,wl02,s02,out_evhor)                         # out-sample estimated trend + seas
   wm14       <- wl02[[2]]                                                   # in-sample noise
-  fcst_mc    <- fx_fcst_armagarch(wm14,armalags,ahead_t,out_evhor,sampling) # returns list with next ahead_t fcst and sd
+  fcst_mc    <- fx_fcst_armagarch(wm14,armalags,win_size,ahead_t,out_evhor,sampling) # returns list with next ahead_t fcst and sd
   wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm13)
   wm05       <- fx_crpsgeneric(wm03,wm13,wm14,fcst_mc,out_evhor,sampling)
   return(list(wm03fcst,wm05,wm14))
