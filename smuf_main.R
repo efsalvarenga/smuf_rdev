@@ -168,8 +168,12 @@ fx_fcst_armagarch <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling
         if(final.ordl <= nrow(final.ord)) {final.ordl = final.ordl+1}
         next
       }
-      sim1 = ugarchsim(fit, n.sim = max(ahead_t), m.sim = sampling)
-      simdata <- list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
+      if (gof(fit, groups=c(2016))[3] >= 0.01) {
+        sim1    <- ugarchsim(fit, n.sim = max(ahead_t), m.sim = sampling)
+        simdata <- list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
+      } else {
+        simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh)
+      }
     }
     simdata
   }
