@@ -34,7 +34,7 @@ data_size     <- importpar[5]
 #===========================================
 # Integrated Parameters
 #===========================================
-cus_list      <- seq(1,1000)
+cus_list      <- seq(200,500)
 # frontierstp   <- 5                       # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
@@ -62,9 +62,9 @@ for (h in hrz_lim){
   cl  <- makeCluster(detectCores())   # reset parallel workers
   registerDoParallel(cl)
   cat("\n\nStep",match(h,hrz_lim), "of",length(hrz_lim),"| Running BIG [h] LOOP with h =",h,"\n")
-  wm01_01    <- wm01_00[min(cus_list):length(cus_list),]
+  wm01_01    <- wm01_00[min(cus_list):max(cus_list),]
   wl06kd     <- fx_int_fcst_kdcv(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,T)
-  wl06ag     <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags)
+  wl06ag     <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
   crpskdmath <- rbind(crpskdmath,colMeans(wl06kd[[2]],na.rm=T))
   crpsagmath <- rbind(crpsagmath,colMeans(wl06ag[[2]],na.rm=T))
   crpskdmatc <- rbind(crpskdmatc,rowMeans(wl06kd[[2]],na.rm=T))

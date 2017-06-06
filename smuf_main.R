@@ -124,7 +124,7 @@ fx_fcst_kds <- function (wm04,win_size,def_evhor,sampling){
   return(fcst_mc2)
 }
 
-fx_fcst_kds_quickvector <- function (runvec,win_size,def_evhor,sampling){
+fx_fcst_kds_quickvector <- function (runvec,win_size,def_evhor,sampling,cross_overh){
   denssmall  <- density(runvec[(def_evhor[7] - win_size[1] + 1):(def_evhor[7])])
   denslarge  <- density(runvec[(def_evhor[7] - win_size[2] + 1):(def_evhor[7])])
   fcstsmall  <- sample(denssmall$x, sampling, replace=TRUE, prob=denssmall$y)
@@ -135,8 +135,8 @@ fx_fcst_kds_quickvector <- function (runvec,win_size,def_evhor,sampling){
   return(fcst_kds_qv)
 }
 
-fx_fcst_armagarch <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling){
-  fcst_armagarch <- foreach (j = 1:nrow(wm14), .packages=c("rugarch")) %dopar% {
+fx_fcst_armagarch <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling,cross_overh){
+  fcst_armagarch <- foreach (j = 1:nrow(wm14), .packages=c("rugarch"), .export='fx_fcst_kds_quickvector') %dopar% {
     runvec       <- wm14[j,]
     # Defining ARMA lags
     final.bic <- matrix(nrow=0,ncol=4)
@@ -155,7 +155,7 @@ fx_fcst_armagarch <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling
     }
     final.ord <- final.bic[sort.list(final.bic[,3]), ]
     if (nrow(final.ord)==0) {             # if no ARMA(p,q) fits, go with kde_quickvector
-      fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling)
+      simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh)
     } else {                              # fitting ARMA-GARCH parameters and simulating
       fit        = F
       final.ordl = 0
@@ -169,9 +169,9 @@ fx_fcst_armagarch <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling
         next
       }
       sim1 = ugarchsim(fit, n.sim = max(ahead_t), m.sim = sampling)
-      list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
+      simdata <- list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
     }
-    
+    simdata
   }
   return(fcst_armagarch)
 }
@@ -356,14 +356,14 @@ fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is
   }
 }
 
-fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags){
+fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh){
   out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
   wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                         # work matrix
   wl02       <- fx_seas2(wm01,s01,s02,sum_of_h,out_evhor)                   # in-sample seasonality pattern (s,r,t)
   wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                        # out-sample original load data
   wm13       <- fx_unseas2(wm01,wl02,s02,out_evhor)                         # out-sample estimated trend + seas
   wm14       <- wl02[[2]]                                                   # in-sample noise
-  fcst_mc    <- fx_fcst_armagarch(wm14,armalags,win_size,ahead_t,out_evhor,sampling) # returns list with next ahead_t fcst and sd
+  fcst_mc    <- fx_fcst_armagarch(wm14,armalags,win_size,ahead_t,out_evhor,sampling,cross_overh) # returns list with next ahead_t fcst and sd
   wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm13)
   wm05       <- fx_crpsgeneric(wm03,wm13,wm14,fcst_mc,out_evhor,sampling)
   return(list(wm03fcst,wm05,wm14))
@@ -381,9 +381,9 @@ for (h in hrz_lim){
   # Individual customers forecast
   #===========================================
   cat("[Ind] ")
-  wm01_01    <- wm01_00[min(cus_list):length(cus_list),]
+  wm01_01    <- wm01_00[min(cus_list):max(cus_list),]
   wl06kd     <- fx_int_fcst_kdcv(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,T)
-  wl06ag     <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags)
+  wl06ag     <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
   wv45       <- rowMeans(wl06[[1]])
   sd01       <- as.numeric(fx_sd_mymat(wl06[[3]]))
   
