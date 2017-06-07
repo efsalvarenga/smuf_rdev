@@ -42,7 +42,8 @@ ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
 hrz_lim       <- seq(0,1)*2069
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
-crossvalstps  <- 2                       # Steps used for multiple crossvalidation (Only KDE)
+crossvalstps  <- 5                       # Steps used for multiple crossvalidation (Only KDE)
+crossvalfocus <- max(ahead_t)            # What period is focused when running crossvalidation
 is_wins_weeks <- 12                      # Number of weeks used for in-sample (KDE uses win_size) & seasonality
 sampling      <- 1024                    # For monte-carlo CRPS calculation
 armalags      <- c(2,3)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)

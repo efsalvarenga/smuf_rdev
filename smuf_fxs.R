@@ -49,8 +49,8 @@ fx_unseas <- function (wm01,wm02,s02,def_evhor){
   return(wm04)
 }
 
-fx_seas2  <- function (wm01,s01,s02,sum_of_h,def_evhor){
-  wm12    <- foreach (j = 1:nrow(wm01), .combine=c("rbind"), .packages=c("forecast")) %dopar% {
+fx_seas2   <- function (wm01,s01,s02,sum_of_h,def_evhor){
+  wm12     <- foreach (j = 1:nrow(wm01), .combine=c("rbind"), .packages=c("forecast")) %dopar% {
     wv31i  <- wm01[j,1:def_evhor[7]]
     wv32i  <- stl(msts(wv31i,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)), s.window="periodic", robust=TRUE)
     wv32is <- wv32i$time.series[1:s02,1]
@@ -58,10 +58,11 @@ fx_seas2  <- function (wm01,s01,s02,sum_of_h,def_evhor){
     wv32ir <- wv32i$time.series[,3]
     c(wv32is,wv32ir,wv32it)
   }
+  wm12  <- rbind(wm12)
   sepp  <- s02+(ncol(wm12)-s02)/2
-  wm12s <- wm12[,1:s02]
-  wm12r <- wm12[,(s02+1):sepp]
-  wm12t <- wm12[,(sepp+1):ncol(wm12)]
+  wm12s <- rbind(wm12[,1:s02])
+  wm12r <- rbind(wm12[,(s02+1):sepp])
+  wm12t <- rbind(wm12[,(sepp+1):ncol(wm12)])
   return(list(wm12s,wm12r,wm12t))
 }
 
@@ -125,7 +126,7 @@ fx_fcst_kds_quickvector <- function (runvec,win_size,def_evhor,sampling,cross_ov
 }
 
 fx_fcst_armagarch <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling,cross_overh){
-  fcst_armagarch <- foreach (j = 1:nrow(wm14), .packages=c("rugarch"), .export='fx_fcst_kds_quickvector') %dopar% {
+  fcst_armagarch <- foreach (j = 1:nrow(wm14), .packages=c("rugarch"), .export='fx_fcst_kds_quickvector') %do% {
     runvec       <- wm14[j,]
     # Defining ARMA lags
     final.bic <- matrix(nrow=0,ncol=4)
@@ -145,6 +146,7 @@ fx_fcst_armagarch <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling
     final.ord <- final.bic[sort.list(final.bic[,3]), ]
     if (nrow(final.ord)==0) {             # if no ARMA(p,q) fits, go with kde_quickvector
       simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh)
+      print("foi kd")
     } else {                              # fitting ARMA-GARCH parameters and simulating
       fit        = F
       final.ordl = 0
@@ -160,8 +162,10 @@ fx_fcst_armagarch <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling
       if (gof(fit, groups=c(2016))[3] >= 0.05) {
         sim1    <- ugarchsim(fit, n.sim = max(ahead_t), m.sim = sampling)
         simdata <- list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
+        print("foi ag")
       } else {
         simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh)
+        print("foi kd")
       }
     }
     simdata
@@ -283,14 +287,28 @@ fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h
   return(list(wm03fcst,wm05,wm14))
 }
 
-fx_int_crossval_vector <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
+fx_int_crossval_vector <- function(wm01_01,wv42,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
   def_evhor     <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,crossvalsize)
   wm01          <- wm01_01[,def_evhor[2]:def_evhor[3]]                      # work matrix
   runvec        <- wv42 %*% wm01 / sum(wv42)
   cross_seq     <- seq(def_evhor[8],def_evhor[4]-max(ahead_t),round((def_evhor[4]-max(ahead_t)-def_evhor[7])/crossvalstps))
   crossval_runs <- foreach (k = cross_seq, .combine=c('rbind')) %do%{
     co_evhor    <- fx_evhor(wm01,k,0,ahead_t,s02,is_wins_weeks,0)
-    runveccv    <- runvec[co_evhor[2]:co_evhor[3]]
+    runveccv    <- rbind(runvec[co_evhor[2]:co_evhor[3]])
+    wl02cv      <- fx_seas2(runveccv,s01,s02,sum_of_h,co_evhor)                   # in-sample seasonality pattern (s,r,t)
+    wm03cv      <- rbind(runveccv[(co_evhor[4]+1):co_evhor[6]])                        # out-sample original load data
+    wm13cv      <- rbind(fx_unseas2(runveccv,wl02cv,s02,co_evhor))                         # out-sample estimated trend + seas
+    wm14cv      <- wl02cv[[2]]                                                   # in-sample noise
+    fcst_mccv   <- fx_fcst_armagarch(wm14cv,armalags,win_size,ahead_t,co_evhor,sampling,cross_overh) # returns list with next ahead_t fcst and sd
+    fcts_mccv   <- fx_fcst_kds_quickvector(wm14cv,win_size,co_evhor,sampling,cross_overh)
+    wm03fcstcv  <- rbind(fx_fcstgeneric(fcst_mccv,co_evhor,wm13cv))
+    wm05cv      <- fx_crpsgeneric(wm03cv,wm13cv,wm14cv,fcst_mccv,co_evhor,sampling)
+    wm05cv[1,1:crossvalfocus]
+  }
+    
+    
+    
+    
     
     # inicia no 1??? nao seria no in_sample_ini?
     wv31i  <- wm01[j,1:def_evhor[7]]   #from fx_seas2
@@ -299,13 +317,6 @@ fx_int_crossval_vector <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_s
     wv32it <- wv32i$time.series[,2]
     wv32ir <- wv32i$time.series[,3]
     
-    wl02        <- fx_seas2(runveccv,s01,s02,sum_of_h,co_evhor)                   # in-sample seasonality pattern (s,r,t)
-    wm03        <- runveccv[,(out_evhor[4]+1):out_evhor[6]]                        # out-sample original load data
-    wm13       <- fx_unseas2(wm01,wl02,s02,out_evhor)                         # out-sample estimated trend + seas
-    wm14       <- wl02[[2]]                                                   # in-sample noise
-    fcst_mc    <- fx_fcst_armagarch(wm14,armalags,win_size,ahead_t,out_evhor,sampling,cross_overh) # returns list with next ahead_t fcst and sd
-    wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm13)
-    wm05       <- fx_crpsgeneric(wm03,wm13,wm14,fcst_mc,out_evhor,sampling)
     
     
     wm02cv      <- fx_seas(wm01cv,s01,s02,sum_of_h,co_evhor)       # in-sample seasonality pattern
