@@ -168,7 +168,7 @@ fx_fcst_armagarch <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling
         if(final.ordl <= nrow(final.ord)) {final.ordl = final.ordl+1}
         next
       }
-      if (gof(fit, groups=c(2016))[3] >= 0.01) {
+      if (gof(fit, groups=c(2016))[3] >= 0.05) {
         sim1    <- ugarchsim(fit, n.sim = max(ahead_t), m.sim = sampling)
         simdata <- list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
       } else {
