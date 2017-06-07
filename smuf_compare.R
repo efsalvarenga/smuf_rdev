@@ -63,8 +63,8 @@ for (h in hrz_lim){
   registerDoParallel(cl)
   cat("\n\nStep",match(h,hrz_lim), "of",length(hrz_lim),"| Running BIG [h] LOOP with h =",h,"\n")
   wm01_01    <- wm01_00[min(cus_list):max(cus_list),]
-  wl06kd     <- fx_int_fcst_kdcv(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,T)
-  wl06ag     <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
+  wl06kd     <- fx_int_fcst_kdcv(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,T,armalags,cross_overh)
+  wl06ag     <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh)
   crpskdmath <- rbind(crpskdmath,colMeans(wl06kd[[2]],na.rm=T))
   crpsagmath <- rbind(crpsagmath,colMeans(wl06ag[[2]],na.rm=T))
   crpskdmatc <- rbind(crpskdmatc,rowMeans(wl06kd[[2]],na.rm=T))

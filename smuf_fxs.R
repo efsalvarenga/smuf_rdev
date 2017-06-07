@@ -181,6 +181,7 @@ fx_fcst_wm <- function(fcst_mc,cvcojmean,out_evhor,wm02){
     wv33b <- wm02[j,1:(out_evhor[6] - out_evhor[7])]
     (wv36f+wv33b)
   }
+  return(fcst_co)
 }
 
 fx_fcstgeneric <- function(fcst_mc,out_evhor,wm13){
@@ -189,6 +190,7 @@ fx_fcstgeneric <- function(fcst_mc,out_evhor,wm13){
     wv36g <- wm13[j,]
     (wv36f+wv36g)
   }
+  return(fcst_co)
 }
 
 #===========================================
@@ -222,6 +224,7 @@ fx_crps_wm <- function(crps_mc,cvcojmean,out_evhor,wm02){
     }
     wv36c
   }
+  return(crps_co)
 }
 
 #===========================================
@@ -238,10 +241,10 @@ fx_rndgrp <- function(wm01,frontierstp){
   return(result)
 }
 
-fx_optgrp_crps <- function (wv42){
+fx_optgrp_crps_kd <- function (wv42){
   if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
     fv01   <- rbind(wv42 %*% wm01_01 / sum(wv42),0)
-    fl02   <- fx_int_fcst_kdcv(fv01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,F)
+    fl02   <- fx_int_fcst_kdcv(fv01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,F,armalags,cross_overh)
     result <- as.numeric(fl02[[2]][1,1])
   } else {result <- 10}
   return (result)
@@ -256,6 +259,33 @@ fx_optgrp_sdev <- function (wv42){
     result   <- sd(fv03)
   } else {result <- 10}
   return (result)
+}
+
+fx_applgrp     <- function(optgrp,wv46,wm01_01,fx_to_use,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh){
+  opt_min_cusd <- 0
+  opt_max_cusd <- max(wv46)
+  wm01_grpl     <- list(optgrp %*% wm01_01, optgrp)
+  wm01_grp      <- wm01_grpl[[1]] / rowSums(wm01_grpl[[2]])
+  wl06opt       <- fx_to_use(wm01_grp,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,T,armalags,cross_overh)
+  wv45opt       <- as.numeric(rowMeans(wl06opt[[1]]) * rowSums(wm01_grpl[[2]]))
+  sd01opt       <- as.numeric(fx_sd_mymat(wl06opt[[1]]))
+  cr01opt       <- rowMeans(wl06opt[[2]])
+  # cr02optsdev <- foreach (i = 1:frontierstp,
+  #                         .packages=c("forecast","rgenoud","foreach"),
+  #                         .combine=c("cbind")) %dopar% {
+  #                           fx_optgrp_crps_kd(optgrp_sdev[i,])
+  #                         }
+  # cr02optsdev <- as.numeric(cr02optsdev)
+  # sd02optsdev <- foreach (i = 1:frontierstp,
+  #                         .packages=c("forecast","rgenoud"),
+  #                         .combine=c("cbind")) %dopar% {
+  #                           fx_optgrp_sdev(optgrp_sdev[i,])
+  #                         }
+  # sd02optsdev <- as.numeric(sd02optsdev)
+  # 
+  # for sdev calc: sd01 is the outsample result, sd02 is the crossval result
+  # for crps calc: cr01 is the outsample result, cr02 is the crossval result
+  return(cbind(cr01opt,wv45opt))
 }
 
 #===========================================
@@ -283,14 +313,14 @@ fx_plt_rnd_vs_opt <- function(bighlp,myrangex,myrangey,xunit) {
   for (i in 3:length(bighlp)){
     points(bighlp[[i]][,1],bighlp[[i]][,2],col=mycolors[i-2],pch=20)
   }
-  legend('topright', inset=c(0,0), legend = c("random","opt_sdev_outsample","opt_sdev_insample","opt_crps_outsample","opt_crps_insample"),
+  legend('topright', inset=c(0,0), legend = c("random","opt_sdev_kd","opt_sdev_ag","opt_crps_kd","opt_crps_ag"),
          lty=1, col=c("gray80",mycolors), bty='n', cex=.75, title="Grouping")
 }
 
 #===========================================
 # Functions Declarations: Integrations
 #===========================================
-fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run){
+fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
   def_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,crossvalsize)
   wm01       <- wm01_01[,def_evhor[2]:def_evhor[3]]                # work matrix
   # ------ Cross Validation ----------------
@@ -330,7 +360,7 @@ fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is
   }
 }
 
-fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh){
+fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
   out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
   wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                         # work matrix
   wl02       <- fx_seas2(wm01,s01,s02,sum_of_h,out_evhor)                   # in-sample seasonality pattern (s,r,t)
