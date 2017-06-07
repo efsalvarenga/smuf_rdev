@@ -228,6 +228,107 @@ fx_crps_wm <- function(crps_mc,cvcojmean,out_evhor,wm02){
 }
 
 #===========================================
+# Functions Declarations: Integrations
+#===========================================
+fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
+  def_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,crossvalsize)
+  wm01       <- wm01_01[,def_evhor[2]:def_evhor[3]]                # work matrix
+  # ------ Cross Validation ----------------
+  cross_seq     <- seq(def_evhor[8],def_evhor[4]-max(ahead_t),round((def_evhor[4]-max(ahead_t)-def_evhor[7])/crossvalstps))
+  crossval_runs <- foreach (k = cross_seq, .combine=c('rbind')) %do%{
+    co_evhor    <- fx_evhor(wm01,k,0,ahead_t,s02,is_wins_weeks,0)
+    wm01cv      <- wm01[,co_evhor[2]:co_evhor[3]]                  # work matrix
+    wm02cv      <- fx_seas(wm01cv,s01,s02,sum_of_h,co_evhor)       # in-sample seasonality pattern
+    wm03cv      <- wm01cv[,(co_evhor[4]+1):co_evhor[6]]            # out-sample original load data
+    wm04cv      <- fx_unseas(wm01cv,wm02cv,s02,co_evhor)           # in-out sample unseasonalised
+    fcst_mccv   <- fx_fcst_kds(wm04cv,win_size,co_evhor,sampling)
+    crps_mccv   <- fx_crps_mc(wm04cv,fcst_mccv,co_evhor,sampling)
+    cvcoj       <- fx_crossover(fcst_mccv,crps_mccv,wm02cv,co_evhor)
+    wm05cv      <- fx_crps_wm(crps_mccv,cvcoj,co_evhor,wm02cv)
+    c(as.numeric(cvcoj),rowMeans(wm05cv))
+  }
+  cvcojmean <- foreach (a = 1:nrow(wm01),.combine=c("rbind")) %dopar%{
+    round(mean(crossval_runs[,a]))
+  }
+  cvcrpsmean <- foreach (a = (nrow(wm01)+1):(2*nrow(wm01)),.combine=c("rbind")) %dopar%{
+    mean(crossval_runs[,a])
+  }
+  if (fcst_run == F) {
+    return(list(cvcojmean,cvcrpsmean))
+  }
+  # ------ Forecasting & Verification ------
+  if (fcst_run == T) {
+    out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
+    wm02       <- fx_seas(wm01,s01,s02,sum_of_h,out_evhor)           # in-sample seasonality pattern
+    wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]               # out-sample original load data
+    wm04       <- fx_unseas(wm01,wm02,s02,out_evhor)                 # in-out sample unseasonalised
+    fcst_mc    <- fx_fcst_kds(wm04,win_size,out_evhor,sampling)
+    crps_mc    <- fx_crps_mc(wm04,fcst_mc,out_evhor,sampling)
+    wm03fcst   <- fx_fcst_wm(fcst_mc,cvcojmean,out_evhor,wm02)
+    wm05       <- fx_crps_wm(crps_mc,cvcojmean,out_evhor,wm02)
+    return(list(wm03fcst,wm05,wm04[,1:out_evhor[7]]))
+  }
+}
+
+fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
+  out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
+  wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                         # work matrix
+  wl02       <- fx_seas2(wm01,s01,s02,sum_of_h,out_evhor)                   # in-sample seasonality pattern (s,r,t)
+  wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                        # out-sample original load data
+  wm13       <- fx_unseas2(wm01,wl02,s02,out_evhor)                         # out-sample estimated trend + seas
+  wm14       <- wl02[[2]]                                                   # in-sample noise
+  fcst_mc    <- fx_fcst_armagarch(wm14,armalags,win_size,ahead_t,out_evhor,sampling,cross_overh) # returns list with next ahead_t fcst and sd
+  wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm13)
+  wm05       <- fx_crpsgeneric(wm03,wm13,wm14,fcst_mc,out_evhor,sampling)
+  return(list(wm03fcst,wm05,wm14))
+}
+
+fx_int_crossval_vector <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
+  def_evhor     <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,crossvalsize)
+  wm01          <- wm01_01[,def_evhor[2]:def_evhor[3]]                      # work matrix
+  runvec        <- wv42 %*% wm01 / sum(wv42)
+  cross_seq     <- seq(def_evhor[8],def_evhor[4]-max(ahead_t),round((def_evhor[4]-max(ahead_t)-def_evhor[7])/crossvalstps))
+  crossval_runs <- foreach (k = cross_seq, .combine=c('rbind')) %do%{
+    co_evhor    <- fx_evhor(wm01,k,0,ahead_t,s02,is_wins_weeks,0)
+    runveccv    <- runvec[co_evhor[2]:co_evhor[3]]
+    
+    # inicia no 1??? nao seria no in_sample_ini?
+    wv31i  <- wm01[j,1:def_evhor[7]]   #from fx_seas2
+    wv32i  <- stl(msts(wv31i,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)), s.window="periodic", robust=TRUE)
+    wv32is <- wv32i$time.series[1:s02,1]
+    wv32it <- wv32i$time.series[,2]
+    wv32ir <- wv32i$time.series[,3]
+    
+    wl02        <- fx_seas2(runveccv,s01,s02,sum_of_h,co_evhor)                   # in-sample seasonality pattern (s,r,t)
+    wm03        <- runveccv[,(out_evhor[4]+1):out_evhor[6]]                        # out-sample original load data
+    wm13       <- fx_unseas2(wm01,wl02,s02,out_evhor)                         # out-sample estimated trend + seas
+    wm14       <- wl02[[2]]                                                   # in-sample noise
+    fcst_mc    <- fx_fcst_armagarch(wm14,armalags,win_size,ahead_t,out_evhor,sampling,cross_overh) # returns list with next ahead_t fcst and sd
+    wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm13)
+    wm05       <- fx_crpsgeneric(wm03,wm13,wm14,fcst_mc,out_evhor,sampling)
+    
+    
+    wm02cv      <- fx_seas(wm01cv,s01,s02,sum_of_h,co_evhor)       # in-sample seasonality pattern
+    wm03cv      <- wm01cv[,(co_evhor[4]+1):co_evhor[6]]            # out-sample original load data
+    wm04cv      <- fx_unseas(wm01cv,wm02cv,s02,co_evhor)           # in-out sample unseasonalised
+    fcst_mccv   <- fx_fcst_kds(wm04cv,win_size,co_evhor,sampling)
+    crps_mccv   <- fx_crps_mc(wm04cv,fcst_mccv,co_evhor,sampling)
+    cvcoj       <- fx_crossover(fcst_mccv,crps_mccv,wm02cv,co_evhor)
+    wm05cv      <- fx_crps_wm(crps_mccv,cvcoj,co_evhor,wm02cv)
+    c(as.numeric(cvcoj),rowMeans(wm05cv))
+  }
+  cvcojmean <- foreach (a = 1:nrow(wm01),.combine=c("rbind")) %dopar%{
+    round(mean(crossval_runs[,a]))
+  }
+  cvcrpsmean <- foreach (a = (nrow(wm01)+1):(2*nrow(wm01)),.combine=c("rbind")) %dopar%{
+    mean(crossval_runs[,a])
+  }
+  if (fcst_run == F) {
+    return(list(cvcojmean,cvcrpsmean))
+  }
+}
+
+#===========================================
 # Functions Declarations: Optimisation
 #===========================================
 fx_rndgrp <- function(wm01,frontierstp){
@@ -315,60 +416,4 @@ fx_plt_rnd_vs_opt <- function(bighlp,myrangex,myrangey,xunit) {
   }
   legend('topright', inset=c(0,0), legend = c("random","opt_sdev_kd","opt_sdev_ag","opt_crps_kd","opt_crps_ag"),
          lty=1, col=c("gray80",mycolors), bty='n', cex=.75, title="Grouping")
-}
-
-#===========================================
-# Functions Declarations: Integrations
-#===========================================
-fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
-  def_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,crossvalsize)
-  wm01       <- wm01_01[,def_evhor[2]:def_evhor[3]]                # work matrix
-  # ------ Cross Validation ----------------
-  cross_seq     <- seq(def_evhor[8],def_evhor[4]-max(ahead_t),round((def_evhor[4]-max(ahead_t)-def_evhor[7])/crossvalstps))
-  crossval_runs <- foreach (k = cross_seq, .combine=c('rbind')) %do%{
-    co_evhor    <- fx_evhor(wm01,k,0,ahead_t,s02,is_wins_weeks,0)
-    wm01cv      <- wm01[,co_evhor[2]:co_evhor[3]]                  # work matrix
-    wm02cv      <- fx_seas(wm01cv,s01,s02,sum_of_h,co_evhor)       # in-sample seasonality pattern
-    wm03cv      <- wm01cv[,(co_evhor[4]+1):co_evhor[6]]            # out-sample original load data
-    wm04cv      <- fx_unseas(wm01cv,wm02cv,s02,co_evhor)           # in-out sample unseasonalised
-    fcst_mccv   <- fx_fcst_kds(wm04cv,win_size,co_evhor,sampling)
-    crps_mccv   <- fx_crps_mc(wm04cv,fcst_mccv,co_evhor,sampling)
-    cvcoj       <- fx_crossover(fcst_mccv,crps_mccv,wm02cv,co_evhor)
-    wm05cv      <- fx_crps_wm(crps_mccv,cvcoj,co_evhor,wm02cv)
-    c(as.numeric(cvcoj),rowMeans(wm05cv))
-  }
-  cvcojmean <- foreach (a = 1:nrow(wm01),.combine=c("rbind")) %dopar%{
-    round(mean(crossval_runs[,a]))
-  }
-  cvcrpsmean <- foreach (a = (nrow(wm01)+1):(2*nrow(wm01)),.combine=c("rbind")) %dopar%{
-    mean(crossval_runs[,a])
-  }
-  if (fcst_run == F) {
-    return(list(cvcojmean,cvcrpsmean))
-  }
-  # ------ Forecasting & Verification ------
-  if (fcst_run == T) {
-    out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
-    wm02       <- fx_seas(wm01,s01,s02,sum_of_h,out_evhor)           # in-sample seasonality pattern
-    wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]               # out-sample original load data
-    wm04       <- fx_unseas(wm01,wm02,s02,out_evhor)                 # in-out sample unseasonalised
-    fcst_mc    <- fx_fcst_kds(wm04,win_size,out_evhor,sampling)
-    crps_mc    <- fx_crps_mc(wm04,fcst_mc,out_evhor,sampling)
-    wm03fcst   <- fx_fcst_wm(fcst_mc,cvcojmean,out_evhor,wm02)
-    wm05       <- fx_crps_wm(crps_mc,cvcojmean,out_evhor,wm02)
-    return(list(wm03fcst,wm05,wm04[,1:out_evhor[7]]))
-  }
-}
-
-fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
-  out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
-  wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                         # work matrix
-  wl02       <- fx_seas2(wm01,s01,s02,sum_of_h,out_evhor)                   # in-sample seasonality pattern (s,r,t)
-  wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                        # out-sample original load data
-  wm13       <- fx_unseas2(wm01,wl02,s02,out_evhor)                         # out-sample estimated trend + seas
-  wm14       <- wl02[[2]]                                                   # in-sample noise
-  fcst_mc    <- fx_fcst_armagarch(wm14,armalags,win_size,ahead_t,out_evhor,sampling,cross_overh) # returns list with next ahead_t fcst and sd
-  wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm13)
-  wm05       <- fx_crpsgeneric(wm03,wm13,wm14,fcst_mc,out_evhor,sampling)
-  return(list(wm03fcst,wm05,wm14))
 }

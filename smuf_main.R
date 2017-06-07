@@ -35,7 +35,7 @@
 # Integrated Parameters
 #===========================================
 cus_list      <- seq(1,30)
-frontierstp   <- 5                       # Number of demand bins (Stepwise frontier for portfolio optimisation)
+frontierstp   <- 8                       # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
