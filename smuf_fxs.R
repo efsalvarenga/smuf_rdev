@@ -115,18 +115,18 @@ fx_fcst_kds <- function (wm04,win_size,def_evhor,sampling){
 }
 
 fx_fcst_kds_quickvector <- function (runvec,win_size,def_evhor,sampling,cross_overh){
-  denssmall  <- density(runvec[(def_evhor[7] - win_size[1] + 1):(def_evhor[7])])
-  denslarge  <- density(runvec[(def_evhor[7] - win_size[2] + 1):(def_evhor[7])])
-  fcstsmall  <- sample(denssmall$x, sampling, replace=TRUE, prob=denssmall$y)
-  fcstlarge  <- sample(denslarge$x, sampling, replace=TRUE, prob=denslarge$y)
-  kdsim.mean <- rbind(t(replicate(cross_overh,fcstsmall)),t(replicate((max(ahead_t)-cross_overh),fcstlarge)))
-  kdsim.desv <- rbind(t(replicate(cross_overh,rep(denssmall$bw,sampling))),t(replicate((max(ahead_t)-cross_overh),rep(denslarge$bw,sampling))))
+  denssmall   <- density(runvec[(def_evhor[7] - win_size[1] + 1):(def_evhor[7])])
+  denslarge   <- density(runvec[(def_evhor[7] - win_size[2] + 1):(def_evhor[7])])
+  fcstsmall   <- sample(denssmall$x, sampling, replace=TRUE, prob=denssmall$y)
+  fcstlarge   <- sample(denslarge$x, sampling, replace=TRUE, prob=denslarge$y)
+  kdsim.mean  <- rbind(t(replicate(cross_overh,fcstsmall)),t(replicate((max(ahead_t)-cross_overh),fcstlarge)))
+  kdsim.desv  <- rbind(t(replicate(cross_overh,rep(denssmall$bw,sampling))),t(replicate((max(ahead_t)-cross_overh),rep(denslarge$bw,sampling))))
   fcst_kds_qv <- list(kdsim.mean,kdsim.desv)
   return(fcst_kds_qv)
 }
 
 fx_fcst_armagarch <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling,cross_overh){
-  fcst_armagarch <- foreach (j = 1:nrow(wm14), .packages=c("rugarch"), .export='fx_fcst_kds_quickvector') %do% {
+  fcst_armagarch <- foreach (j = 1:nrow(wm14), .packages=c("rugarch"), .export='fx_fcst_kds_quickvector') %dopar% {
     runvec       <- wm14[j,]
     # Defining ARMA lags
     final.bic <- matrix(nrow=0,ncol=4)
@@ -146,7 +146,7 @@ fx_fcst_armagarch <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling
     final.ord <- final.bic[sort.list(final.bic[,3]), ]
     if (nrow(final.ord)==0) {             # if no ARMA(p,q) fits, go with kde_quickvector
       simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh)
-      print("foi kd")
+      print("foi kd1")
     } else {                              # fitting ARMA-GARCH parameters and simulating
       fit        = F
       final.ordl = 0
@@ -165,7 +165,7 @@ fx_fcst_armagarch <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling
         print("foi ag")
       } else {
         simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh)
-        print("foi kd")
+        print("foi kd2")
       }
     }
     simdata
@@ -287,7 +287,7 @@ fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h
   return(list(wm03fcst,wm05,wm14))
 }
 
-fx_int_crossval_vector <- function(wm01_01,wv42,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
+fx_int_crossval_vector <- function(wm01_01,wv42,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh,use_arma){
   def_evhor     <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,crossvalsize)
   wm01          <- wm01_01[,def_evhor[2]:def_evhor[3]]                      # work matrix
   runvec        <- wv42 %*% wm01 / sum(wv42)
@@ -299,44 +299,16 @@ fx_int_crossval_vector <- function(wm01_01,wv42,h,in_sample_fr,s01,s02,sum_of_h,
     wm03cv      <- rbind(runveccv[(co_evhor[4]+1):co_evhor[6]])                        # out-sample original load data
     wm13cv      <- rbind(fx_unseas2(runveccv,wl02cv,s02,co_evhor))                         # out-sample estimated trend + seas
     wm14cv      <- wl02cv[[2]]                                                   # in-sample noise
-    fcst_mccv   <- fx_fcst_armagarch(wm14cv,armalags,win_size,ahead_t,co_evhor,sampling,cross_overh) # returns list with next ahead_t fcst and sd
-    fcts_mccv   <- fx_fcst_kds_quickvector(wm14cv,win_size,co_evhor,sampling,cross_overh)
+    if (use_arma == T) {
+      fcst_mccv   <- fx_fcst_armagarch(wm14cv,armalags,win_size,ahead_t,co_evhor,sampling,cross_overh)
+    } else {
+      fcts_mccv   <- fx_fcst_kds_quickvector(wm14cv,win_size,co_evhor,sampling,cross_overh)
+    }
     wm03fcstcv  <- rbind(fx_fcstgeneric(fcst_mccv,co_evhor,wm13cv))
     wm05cv      <- fx_crpsgeneric(wm03cv,wm13cv,wm14cv,fcst_mccv,co_evhor,sampling)
-    wm05cv[1,1:crossvalfocus]
+    mean(wm05cv[1,1:crossvalfocus])
   }
-    
-    
-    
-    
-    
-    # inicia no 1??? nao seria no in_sample_ini?
-    wv31i  <- wm01[j,1:def_evhor[7]]   #from fx_seas2
-    wv32i  <- stl(msts(wv31i,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)), s.window="periodic", robust=TRUE)
-    wv32is <- wv32i$time.series[1:s02,1]
-    wv32it <- wv32i$time.series[,2]
-    wv32ir <- wv32i$time.series[,3]
-    
-    
-    
-    wm02cv      <- fx_seas(wm01cv,s01,s02,sum_of_h,co_evhor)       # in-sample seasonality pattern
-    wm03cv      <- wm01cv[,(co_evhor[4]+1):co_evhor[6]]            # out-sample original load data
-    wm04cv      <- fx_unseas(wm01cv,wm02cv,s02,co_evhor)           # in-out sample unseasonalised
-    fcst_mccv   <- fx_fcst_kds(wm04cv,win_size,co_evhor,sampling)
-    crps_mccv   <- fx_crps_mc(wm04cv,fcst_mccv,co_evhor,sampling)
-    cvcoj       <- fx_crossover(fcst_mccv,crps_mccv,wm02cv,co_evhor)
-    wm05cv      <- fx_crps_wm(crps_mccv,cvcoj,co_evhor,wm02cv)
-    c(as.numeric(cvcoj),rowMeans(wm05cv))
-  }
-  cvcojmean <- foreach (a = 1:nrow(wm01),.combine=c("rbind")) %dopar%{
-    round(mean(crossval_runs[,a]))
-  }
-  cvcrpsmean <- foreach (a = (nrow(wm01)+1):(2*nrow(wm01)),.combine=c("rbind")) %dopar%{
-    mean(crossval_runs[,a])
-  }
-  if (fcst_run == F) {
-    return(list(cvcojmean,cvcrpsmean))
-  }
+  return(mean(crossval_runs))
 }
 
 #===========================================
@@ -353,11 +325,9 @@ fx_rndgrp <- function(wm01,frontierstp){
   return(result)
 }
 
-fx_optgrp_crps_kd <- function (wv42){
+fx_optgrp_crps <- function (wv42,use_arma){
   if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
-    fv01   <- rbind(wv42 %*% wm01_01 / sum(wv42),0)
-    fl02   <- fx_int_fcst_kdcv(fv01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,F,armalags,cross_overh)
-    result <- as.numeric(fl02[[2]][1,1])
+    result <- fx_int_crossval_vector(wm01_01,wv42,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh,use_arma)
   } else {result <- 10}
   return (result)
 }

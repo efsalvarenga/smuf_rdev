@@ -17,8 +17,8 @@
 # library(rgenoud)
 # library(rugarch)
 # 
-# cl  <- makeCluster(detectCores())
-# registerDoParallel(cl)
+cl  <- makeCluster(detectCores())
+registerDoParallel(cl)
 # setwd("~/GitRepos/smuf_rdev")            # set working directory
 # source("smuf_fxs.R")                     # Load functions script
 # 
@@ -35,7 +35,7 @@
 # Integrated Parameters
 #===========================================
 cus_list      <- seq(1,30)
-frontierstp   <- 8                       # Number of demand bins (Stepwise frontier for portfolio optimisation)
+frontierstp   <- 4                       # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
@@ -53,7 +53,6 @@ armalags      <- c(2,3)                  # Max lags for ARIMA fit in ARMA-GARCH 
 # BIG [h] LOOP Start
 #===========================================
 bighlpcrps = list()
-bighlpsdev = list()
 
 for (h in hrz_lim){
   ptm <- proc.time()
@@ -65,7 +64,6 @@ for (h in hrz_lim){
   cat("[Ind] ")
   wm01_01    <- wm01_00[min(cus_list):max(cus_list),]
   wl06       <- fx_int_fcst_kdcv(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,T,armalags,cross_overh)
-  # wl06ag     <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh)
   wv45       <- rowMeans(wl06[[1]])
   sd01       <- as.numeric(fx_sd_mymat(wl06[[3]]))
   
@@ -77,7 +75,7 @@ for (h in hrz_lim){
   wm01_02    <- wm01_02l[[1]] / rowSums(wm01_02l[[2]])
   wl06rnd    <- fx_int_fcst_kdcv(wm01_02,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,T,armalags,cross_overh)
   wv45rnd    <- as.numeric(rowMeans(wl06rnd[[1]]) * rowSums(wm01_02l[[2]]))
-  sd01rnd    <- as.numeric(fx_sd_mymat(wl06rnd[[3]]))
+  # sd01rnd    <- as.numeric(fx_sd_mymat(wl06rnd[[3]]))
   cr01rnd    <- rowMeans(wl06rnd[[2]])
   
   #===========================================
@@ -106,13 +104,14 @@ for (h in hrz_lim){
   cat("[OptCVKD] ")
   optgrp_cvkd  <- foreach (i = 1:frontierstp,
                            .packages=c("forecast","rgenoud","foreach"),
+                           .export=c('fcst_mccv'),
                            .combine=c("rbind")) %dopar% {
                              opt_min_cusd  = wv46[i]
                              opt_max_cusd  = wv46[i+1]
-                             optgrp   <- genoud(fx_optgrp_crps_kd, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
+                             optgrp   <- genoud(fx_optgrp_crps, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
                                                 starting.values=c(rep(1,nrow(wm01_01))), Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
-                                                data.type.int=TRUE,  int.seed=1,
-                                                print.level=1)
+                                                data.type.int=TRUE,  int.seed=1, print.level=1,
+                                                use_arma=F)
                              if(optgrp$value == 10) {
                                grouped = c(rep(0,nrow(wm01_01)))
                              } else {
@@ -121,18 +120,17 @@ for (h in hrz_lim){
                              grouped
                            }
   res_crps_kd  <- fx_applgrp(optgrp_cvkd,wv46,wm01_01,fx_int_fcst_kdcv,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
-  
-  
-  cat("[OptCVKD] ")
+  cat("[OptCVAG] ")
   optgrp_cvag  <- foreach (i = 1:frontierstp,
                            .packages=c("forecast","rgenoud","foreach"),
+                           .export=c('fcst_mccv'),
                            .combine=c("rbind")) %dopar% {
                              opt_min_cusd  = wv46[i]
                              opt_max_cusd  = wv46[i+1]
-                             optgrp   <- genoud(fx_optgrp_crps_kd, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
+                             optgrp   <- genoud(fx_optgrp_crps, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
                                                 starting.values=c(rep(1,nrow(wm01_01))), Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
-                                                data.type.int=TRUE,  int.seed=1,
-                                                print.level=1)
+                                                data.type.int=TRUE,  int.seed=1, print.level=1,
+                                                use_arma=T)
                              if(optgrp$value == 10) {
                                grouped = c(rep(0,nrow(wm01_01)))
                              } else {
@@ -140,19 +138,9 @@ for (h in hrz_lim){
                              }
                              grouped
                            }
-  res_crps_kd  <- fx_applgrp(optgrp_cvkd,wv46,wm01_01,fx_int_fcst_kdcv,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bighlpcrps[[match(h,hrz_lim)]] = list(h,cbind(cr01rnd,wv45rnd),cbind(cr01optsdev,wv45optsdev),cbind(cr01optcrps,wv45optcrps))
-  bighlpsdev[[match(h,hrz_lim)]] = list(h,cbind(sd01rnd,wv45rnd),cbind(sd01optsdev,wv45optsdev),cbind(sd01optcrps,wv45optcrps))
+  res_crps_ag  <- fx_applgrp(optgrp_cvag,wv46,wm01_01,fx_int_fcst_kdcv,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
+
+  bighlpcrps[[match(h,hrz_lim)]] = list(h,cbind(cr01rnd,wv45rnd),res_sdev_kd,res_sdev_ag,res_crps_kd,res_crps_ag)
   print(proc.time() - ptm)
 }
 #===========================================
