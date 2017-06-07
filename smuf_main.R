@@ -81,8 +81,8 @@ for (h in hrz_lim){
   #===========================================
   # Optimised groups forecast
   #===========================================
-  cat("[OptSDEV] ")
   wv46         <- seq(0,frontierstp)^2/frontierstp^2 * sum(wv45)
+  cat("[OptSDEV] ")
   optgrp_sdev  <- foreach (i = 1:frontierstp,
                            .packages=c("forecast","rgenoud"),
                            .combine=c("rbind")) %dopar% {
@@ -94,35 +94,11 @@ for (h in hrz_lim){
                                                 print.level=1)
                              optgrp$par
                            }
-  opt_min_cusd<- 0
-  opt_max_cusd<- max(wv46)
-  wm01_03l    <- list(optgrp_sdev %*% wm01_01, optgrp_sdev)
-  wm01_03     <- wm01_03l[[1]] / rowSums(wm01_03l[[2]])
-  wl06optsdev <- fx_int_fcst_kdcv(wm01_03,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,T,armalags,cross_overh)
-  wv45optsdev <- as.numeric(rowMeans(wl06optsdev[[1]]) * rowSums(wm01_03l[[2]]))
-  sd01optsdev <- as.numeric(fx_sd_mymat(wl06optsdev[[1]]))
-  cr01optsdev <- rowMeans(wl06optsdev[[2]])
-  # cr02optsdev <- foreach (i = 1:frontierstp,
-  #                         .packages=c("forecast","rgenoud","foreach"),
-  #                         .combine=c("cbind")) %dopar% {
-  #                           fx_optgrp_crps_kd(optgrp_sdev[i,])
-  #                         }
-  # cr02optsdev <- as.numeric(cr02optsdev)
-  # sd02optsdev <- foreach (i = 1:frontierstp,
-  #                         .packages=c("forecast","rgenoud"),
-  #                         .combine=c("cbind")) %dopar% {
-  #                           fx_optgrp_sdev(optgrp_sdev[i,])
-  #                         }
-  # sd02optsdev <- as.numeric(sd02optsdev)
-  # 
-  # for sdev calc: sd01 is the outsample result, sd02 is the crossval result
-  # for crps calc: cr01 is the outsample result, cr02 is the crossval result
+  res_sdev_kd  <- fx_applgrp(optgrp_sdev,wv46,wm01_01,fx_int_fcst_kdcv,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
+  # res_sdev_kd <- fx_applgrp(optgrp_sdev,wv46,wm01_01,fx_int_fcstgeneric_armagarch,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
   
-  #===========================================
-  # Optimised crps groups forecast
-  #===========================================
-  cat("[OptCrossval]\n")
-  optgrp_crps  <- foreach (i = 1:frontierstp,
+  cat("[OptCVKD] ")
+  optgrp_cvkd  <- foreach (i = 1:frontierstp,
                            .packages=c("forecast","rgenoud","foreach"),
                            .combine=c("rbind")) %dopar% {
                              opt_min_cusd  = wv46[i]
@@ -133,29 +109,8 @@ for (h in hrz_lim){
                                                 print.level=1)
                              optgrp$par
                            }
-  opt_min_cusd<- 0
-  opt_max_cusd<- max(wv46)
-  wm01_04l    <- list(optgrp_crps %*% wm01_01, optgrp_crps)
-  wm01_04     <- wm01_04l[[1]] / rowSums(wm01_04l[[2]])
-  wl06optcrps <- fx_int_fcst_kdcv(wm01_04,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,T,armalags,cross_overh)
-  wv45optcrps <- as.numeric(rowMeans(wl06optcrps[[1]]) * rowSums(wm01_04l[[2]]))
-  sd01optcrps <- as.numeric(fx_sd_mymat(wl06optcrps[[1]]))
-  cr01optcrps <- rowMeans(wl06optcrps[[2]])
-  # cr02optcrps <- foreach (i = 1:frontierstp,
-  #                         .packages=c("forecast","rgenoud","foreach"),
-  #                         .combine=c("cbind")) %dopar% {
-  #                           fx_optgrp_crps_kd(optgrp_crps[i,])
-  #                         }
-  # cr02optcrps <- as.numeric(cr02optcrps)
-  # sd02optcrps <- foreach (i = 1:frontierstp,
-  #                         .packages=c("forecast","rgenoud"),
-  #                         .combine=c("cbind")) %dopar% {
-  #                           fx_optgrp_sdev(optgrp_crps[i,])
-  #                         }
-  # sd02optcrps <- as.numeric(sd02optcrps)
+  res_crps_kd  <- fx_applgrp(optgrp_crps,wv46,wm01_01,fx_int_fcst_kdcv,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
   
-  # for sdev calc: sd01 is the outsample result, sd02 is the crossval result
-  # for crps calc: cr01 is the outsample result, cr02 is the crossval result
   
   bighlpcrps[[match(h,hrz_lim)]] = list(h,cbind(cr01rnd,wv45rnd),cbind(cr01optsdev,wv45optsdev),cbind(cr01optcrps,wv45optcrps))
   bighlpsdev[[match(h,hrz_lim)]] = list(h,cbind(sd01rnd,wv45rnd),cbind(sd01optsdev,wv45optsdev),cbind(sd01optcrps,wv45optcrps))
