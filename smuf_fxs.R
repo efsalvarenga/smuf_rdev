@@ -347,8 +347,9 @@ fx_optgrp_crps <- function (wv42,use_arma){
   return (result)
 }
 
+# todo: test optgrp_sdev removing trend as well
 fx_optgrp_sdev <- function (wv42){
-  if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
+  if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd & sum(wv42)>0){
     sd_evhor <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,crossvalsize)
     fv01     <- as.numeric(wv42 %*% wm01_01[,sd_evhor[2]:sd_evhor[1]] / sum(wv42))
     fv02     <- decompose(msts(fv01,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)))
@@ -359,8 +360,8 @@ fx_optgrp_sdev <- function (wv42){
 }
 
 fx_applgrp     <- function(optgrp,wv46,wm01_01,fx_to_use,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh){
-  opt_min_cusd <- 0
-  opt_max_cusd <- max(wv46)
+  opt_min_cusd  <- 0
+  opt_max_cusd  <- max(wv46)
   wm01_grpl     <- list(optgrp %*% wm01_01, optgrp)
   wm01_grp      <- wm01_grpl[[1]] / rowSums(wm01_grpl[[2]])
   wl06opt       <- fx_to_use(wm01_grp,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,T,armalags,cross_overh)
