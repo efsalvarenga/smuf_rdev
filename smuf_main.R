@@ -16,12 +16,12 @@
 # library(doParallel)
 # library(rgenoud)
 # library(rugarch)
-# 
+
 cl  <- makeCluster(detectCores())
 registerDoParallel(cl)
-# setwd("~/GitRepos/smuf_rdev")            # set working directory
-# source("smuf_fxs.R")                     # Load functions script
-# 
+setwd("~/GitRepos/smuf_rdev")            # set working directory
+source("smuf_fxs.R")                     # Load functions script
+ 
 # wm01_00       <- readRDS("smuf_import-complete.rds")
 # importpar     <- readRDS("smuf_import-parameter.rds")
 # s01           <- importpar[1]
@@ -34,26 +34,24 @@ registerDoParallel(cl)
 #===========================================
 # Integrated Parameters
 #===========================================
-cus_list      <- seq(1,30)
-frontierstp   <- 4                       # Number of demand bins (Stepwise frontier for portfolio optimisation)
+cus_list      <- seq(1,20)
+frontierstp   <- 20                      # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
-hrz_lim       <- seq(0,1)*2069
+hrz_lim       <- 0 #seq(0,1)*2069
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
-crossvalstps  <- 5                       # Steps used for multiple crossvalidation (Only KDE)
+crossvalstps  <- 16                      # Steps used for multiple crossvalidation (Only KDE)
 crossvalfocus <- max(ahead_t)            # What period is focused when running crossvalidation
 is_wins_weeks <- 12                      # Number of weeks used for in-sample (KDE uses win_size) & seasonality
 sampling      <- 1024                    # For monte-carlo CRPS calculation
-armalags      <- c(2,3)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)
+armalags      <- c(8,8)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)
 
 
 #===========================================
 # BIG [h] LOOP Start
 #===========================================
-bighlpcrps = list()
-
 for (h in hrz_lim){
   ptm <- proc.time()
   cat("\n\nStep",match(h,hrz_lim), "of",length(hrz_lim),"| Running BIG [h] LOOP with h =",h,"\n")
@@ -66,6 +64,7 @@ for (h in hrz_lim){
   wl06       <- fx_int_fcst_kdcv(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,T,armalags,cross_overh)
   wv45       <- rowMeans(wl06[[1]])
   sd01       <- as.numeric(fx_sd_mymat(wl06[[3]]))
+  wv46       <- seq(0,frontierstp)^2/frontierstp^2 * sum(wv45)
   
   #===========================================
   # Random groups & evaluation
@@ -81,8 +80,6 @@ for (h in hrz_lim){
   #===========================================
   # Optimising groups & evaluation
   #===========================================
-  wv46         <- seq(0,frontierstp)^2/frontierstp^2 * sum(wv45)
-  
   cat("[OptSDEV] ")
   optgrp_sdev  <- foreach (i = 1:frontierstp,
                            .packages=c("forecast","rgenoud"),
@@ -100,7 +97,7 @@ for (h in hrz_lim){
                              }
                              grouped
                            }
-  bighlpopgr   <- fx_sav_optgrps(c("sdev",h,frontierstp,length(cus_list)),optgrp_sdev)
+  bighlpopgr   <- fx_sav_optgrps(c("sdev",h,frontierstp,length(cus_list),crossvalstps,armalags),optgrp_sdev)
   res_sdev_kd  <- fx_applgrp(optgrp_sdev,wv46,wm01_01,fx_int_fcst_kdcv,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
   res_sdev_ag  <- fx_applgrp(optgrp_sdev,wv46,wm01_01,fx_int_fcstgeneric_armagarch,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
   
@@ -122,7 +119,7 @@ for (h in hrz_lim){
                              }
                              grouped
                            }
-  bighlpopgr   <- fx_sav_optgrps(c("cvkd",h,frontierstp,length(cus_list)),optgrp_cvkd)
+  bighlpopgr   <- fx_sav_optgrps(c("cvkd",h,frontierstp,length(cus_list),crossvalstps,armalags),optgrp_cvkd)
   res_crps_kd  <- fx_applgrp(optgrp_cvkd,wv46,wm01_01,fx_int_fcst_kdcv,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
   
   cat("[OptCVAG] ")
@@ -143,20 +140,11 @@ for (h in hrz_lim){
                              }
                              grouped
                            }
-  bighlpopgr   <- fx_sav_optgrps(c("cvag",h,frontierstp,length(cus_list)),optgrp_cvag)
+  bighlpopgr   <- fx_sav_optgrps(c("cvag",h,frontierstp,length(cus_list),crossvalstps,armalags),optgrp_cvag)
   res_crps_ag  <- fx_applgrp(optgrp_cvag,wv46,wm01_01,fx_int_fcst_kdcv,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
 
-  bighlpcrps[[match(h,hrz_lim)]] = list(c(h,frontierstp,length(cus_list)),cbind(cr01rnd,wv45rnd),res_sdev_kd,res_sdev_ag,res_crps_kd,res_crps_ag)
-  fx_plt_rnd_vs_opt(bighlpcrps[[match(h,hrz_lim)]],c(0.02,0.07),c(0,3),"CRPS")
+  bighlpcrps   <- fx_sav_optress(c("sdev+crps_kd+ag",h,frontierstp,length(cus_list),crossvalstps,armalags),
+                                 list(c(h,frontierstp,length(cus_list)),cbind(cr01rnd,wv45rnd),res_sdev_kd,res_sdev_ag,res_crps_kd,res_crps_ag))
+  fx_plt_rnd_vs_opt(bighlpcrps[[length(bighlpcrps)]][[2]],c(0.01,0.04),c(0,8),"CRPS")
   print(proc.time() - ptm)
 }
-
-#===========================================
-# Outputs
-#===========================================
-# saveRDS(crpsh_CLU_dyn,  file="0200_analysis.rds") # crps winsize vs time_adead, mean&desv,                per grouping 
-# saveRDS(wm01_4D[[1]],   file="0200_origdat1.rds") # data customer vs time_series,                         per grouping
-# saveRDS(wm02_4D[[1]],   file="0200_seasona1.rds") # seas customer vs seasonal_ts,            per horizon, per grouping
-# saveRDS(fcst_4D[[1]],   file="0200_forecas1.rds") # fcst winsize vs time_ahead per customer, per horizon, per grouping
-# saveRDS(parbundl0200,   file="0200_parbundl.rds")
-# saveRDS(kdscrps,        file="0200_function.rds")

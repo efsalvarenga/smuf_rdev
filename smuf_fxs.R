@@ -100,14 +100,20 @@ fx_sd_mymat <- function (mymat){
   return(as.numeric(sdev))
 }
 
-bighlpopgr = list()
-
 fx_sav_optgrps <- function (conf2save,optgrp){
   bighlpopgr <- readRDS("smuf_main-optgrp.rds")
   bighlpopgr[[(length(bighlpopgr)+1)]] <- list(conf2save,optgrp)
   saveRDS(bighlpopgr,  file="smuf_main-optgrp.rds")
   return(bighlpopgr)
 }
+
+fx_sav_optress <- function (conf2save,optres){
+  bighlpcrps <- readRDS("smuf_main-optres.rds")
+  bighlpcrps[[(length(bighlpcrps)+1)]] <- list(conf2save,optres)
+  saveRDS(bighlpcrps,  file="smuf_main-optres.rds")
+  return(bighlpcrps)
+}
+
 
 #===========================================
 # Functions Declarations: Forecasts
@@ -397,7 +403,7 @@ fx_plt_mymat <- function(wm05,myrangey){
 
 fx_plt_rnd_vs_opt <- function(bighlp,myrangex,myrangey,xunit) {
   plot(myrangex,myrangey, bty="n", type="n", xlab=xunit,
-       ylab="Mean Demand",main=paste("optimum vs random groups for h =",bighlp[[1]]))
+       ylab="Mean Demand",main=paste("optimum vs random groups for h =",bighlp[[1]][[1]][1]))
   grid (NA,NULL, lty = 'dotted')
   mycolors=c("darkgreen","green","darkblue","blue")
   points(bighlp[[2]][,1],bighlp[[2]][,2],col="gray80",pch=20)
