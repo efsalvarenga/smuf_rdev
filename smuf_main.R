@@ -53,7 +53,8 @@ armalags      <- c(8,8)                  # Max lags for ARIMA fit in ARMA-GARCH 
 # BIG [h] LOOP Start
 #===========================================
 for (h in hrz_lim){
-  ptm <- proc.time()
+  ptm    <- proc.time()
+  runkey <- Sys.time()
   cat("\n\nStep",match(h,hrz_lim), "of",length(hrz_lim),"| Running BIG [h] LOOP with h =",h,"\n")
   
   #===========================================
@@ -97,7 +98,7 @@ for (h in hrz_lim){
                              }
                              grouped
                            }
-  bighlpopgr   <- fx_sav_optgrps(c("sdev",h,frontierstp,length(cus_list),crossvalstps,armalags),optgrp_sdev)
+  bighlpopgr   <- fx_sav_optgrps(c("sdev",h,frontierstp,length(cus_list),crossvalstps,armalags,runkey),optgrp_sdev)
   res_sdev_kd  <- fx_applgrp(optgrp_sdev,wv46,wm01_01,fx_int_fcst_kdcv,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
   res_sdev_ag  <- fx_applgrp(optgrp_sdev,wv46,wm01_01,fx_int_fcstgeneric_armagarch,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
   
@@ -119,7 +120,7 @@ for (h in hrz_lim){
                              }
                              grouped
                            }
-  bighlpopgr   <- fx_sav_optgrps(c("cvkd",h,frontierstp,length(cus_list),crossvalstps,armalags),optgrp_cvkd)
+  bighlpopgr   <- fx_sav_optgrps(c("cvkd",h,frontierstp,length(cus_list),crossvalstps,armalags,runkey),optgrp_cvkd)
   res_crps_kd  <- fx_applgrp(optgrp_cvkd,wv46,wm01_01,fx_int_fcst_kdcv,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
   
   cat("[OptCVAG] ")
@@ -140,10 +141,10 @@ for (h in hrz_lim){
                              }
                              grouped
                            }
-  bighlpopgr   <- fx_sav_optgrps(c("cvag",h,frontierstp,length(cus_list),crossvalstps,armalags),optgrp_cvag)
+  bighlpopgr   <- fx_sav_optgrps(c("cvag",h,frontierstp,length(cus_list),crossvalstps,armalags,runkey),optgrp_cvag)
   res_crps_ag  <- fx_applgrp(optgrp_cvag,wv46,wm01_01,fx_int_fcst_kdcv,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
 
-  bighlpcrps   <- fx_sav_optress(c("sdev+crps_kd+ag",h,frontierstp,length(cus_list),crossvalstps,armalags),
+  bighlpcrps   <- fx_sav_optress(c("sdev+crps_kd+ag",h,frontierstp,length(cus_list),crossvalstps,armalags,runkey),
                                  list(c(h,frontierstp,length(cus_list)),cbind(cr01rnd,wv45rnd),res_sdev_kd,res_sdev_ag,res_crps_kd,res_crps_ag))
   fx_plt_rnd_vs_opt(bighlpcrps[[length(bighlpcrps)]][[2]],c(0.01,0.04),c(0,8),"CRPS")
   print(proc.time() - ptm)
