@@ -19,8 +19,8 @@
 # 
 cl  <- makeCluster(detectCores())
 registerDoParallel(cl)
-setwd("~/GiCtRepos/smuf_rdev")           # set working directory
-source("smuf_fxs.R")                     # Load functions script
+# setwd("~/GitRepos/smuf_rdev")            # set working directory
+# source("smuf_fxs.R")                     # Load functions script
 # 
 # wm01_00       <- readRDS("smuf_import-complete.rds")
 # importpar     <- readRDS("smuf_import-parameter.rds")
@@ -35,7 +35,7 @@ source("smuf_fxs.R")                     # Load functions script
 # Integrated Parameters
 #===========================================
 cus_list      <- seq(1,30)
-frontierstp   <- 14                      # Number of demand bins (Stepwise frontier for portfolio optimisation)
+frontierstp   <- 4                       # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
@@ -82,6 +82,7 @@ for (h in hrz_lim){
   # Optimising groups & evaluation
   #===========================================
   wv46         <- seq(0,frontierstp)^2/frontierstp^2 * sum(wv45)
+  
   cat("[OptSDEV] ")
   optgrp_sdev  <- foreach (i = 1:frontierstp,
                            .packages=c("forecast","rgenoud"),
@@ -99,9 +100,10 @@ for (h in hrz_lim){
                              }
                              grouped
                            }
-  bighlpopgr[[(length(bighlpopgr)+1)]] <- list(c(h),optgrp_sdev)
+  bighlpopgr   <- fx_sav_optgrps(c("sdev",h,frontierstp,length(cus_list)),optgrp_sdev)
   res_sdev_kd  <- fx_applgrp(optgrp_sdev,wv46,wm01_01,fx_int_fcst_kdcv,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
   res_sdev_ag  <- fx_applgrp(optgrp_sdev,wv46,wm01_01,fx_int_fcstgeneric_armagarch,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
+  
   cat("[OptCVKD] ")
   optgrp_cvkd  <- foreach (i = 1:frontierstp,
                            .packages=c("forecast","rgenoud","foreach"),
@@ -120,7 +122,9 @@ for (h in hrz_lim){
                              }
                              grouped
                            }
+  bighlpopgr   <- fx_sav_optgrps(c("cvkd",h,frontierstp,length(cus_list)),optgrp_cvkd)
   res_crps_kd  <- fx_applgrp(optgrp_cvkd,wv46,wm01_01,fx_int_fcst_kdcv,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
+  
   cat("[OptCVAG] ")
   optgrp_cvag  <- foreach (i = 1:frontierstp,
                            .packages=c("forecast","rgenoud","foreach"),
@@ -139,9 +143,10 @@ for (h in hrz_lim){
                              }
                              grouped
                            }
+  bighlpopgr   <- fx_sav_optgrps(c("cvag",h,frontierstp,length(cus_list)),optgrp_cvag)
   res_crps_ag  <- fx_applgrp(optgrp_cvag,wv46,wm01_01,fx_int_fcst_kdcv,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
 
-  bighlpcrps[[match(h,hrz_lim)]] = list(h,cbind(cr01rnd,wv45rnd),res_sdev_kd,res_sdev_ag,res_crps_kd,res_crps_ag)
+  bighlpcrps[[match(h,hrz_lim)]] = list(c(h,frontierstp,length(cus_list)),cbind(cr01rnd,wv45rnd),res_sdev_kd,res_sdev_ag,res_crps_kd,res_crps_ag)
   fx_plt_rnd_vs_opt(bighlpcrps[[match(h,hrz_lim)]],c(0.02,0.07),c(0,3),"CRPS")
   print(proc.time() - ptm)
 }
