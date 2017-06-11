@@ -9,6 +9,18 @@
 #===========================================
 
 #===========================================
+# Libraries, Inputs
+#===========================================
+library(forecast)
+library(verification)
+library(doParallel)
+library(rgenoud)
+library(rugarch)
+
+cl  <- makeCluster(detectCores())
+registerDoParallel(cl)
+
+#===========================================
 # Functions Declarations: Modules
 #===========================================
 fx_evhor <- function (wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,crossvalsize){
