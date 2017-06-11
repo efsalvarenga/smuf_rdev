@@ -128,16 +128,17 @@ fx_sav_optress <- function (conf2save,optres){
 #===========================================
 # Functions Declarations: Forecasts
 #===========================================
-fx_fcst_kds <- function (wm04,win_size,def_evhor,sampling){
-  fcst_mc2    <- foreach (j = 1:nrow(wm04)) %dopar% {
-    denssmall <- density(wm04[j,(def_evhor[7] - win_size[1] + 1):(def_evhor[7])])
-    denslarge <- density(wm04[j,(def_evhor[7] - win_size[2] + 1):(def_evhor[7])])
-    fcstsmall <- sample(denssmall$x, sampling, replace=TRUE, prob=denssmall$y)
-    fcstlarge <- sample(denslarge$x, sampling, replace=TRUE, prob=denslarge$y)
-    data.frame(fcstsmall,denssmall$bw,fcstlarge,denslarge$bw)
-  }
-  return(fcst_mc2)
-}
+# fx_fcst_kds <- function (wm04,win_size,def_evhor,sampling){
+#   fcst_mc2    <- foreach (j = 1:nrow(wm04)) %dopar% {
+#     denssmall <- density(wm04[j,(def_evhor[7] - win_size[1] + 1):(def_evhor[7])])
+#     denslarge <- density(wm04[j,(def_evhor[7] - win_size[2] + 1):(def_evhor[7])])
+#     fcstsmall <- sample(denssmall$x, sampling, replace=TRUE, prob=denssmall$y)
+#     fcstlarge <- sample(denslarge$x, sampling, replace=TRUE, prob=denslarge$y)
+#     data.frame(fcstsmall,denssmall$bw,fcstlarge,denslarge$bw)
+#   }
+#   return(fcst_mc2)
+# }
+# Disabled 11/jun/17
 
 fx_fcst_kdss <- function (wm14,win_selec,ahead_t,out_evhor,sampling){
   fcst_kdss  <- foreach (j = 1:nrow(wm14), .packages=c("rugarch")) %dopar% {
@@ -150,18 +151,28 @@ fx_fcst_kdss <- function (wm14,win_selec,ahead_t,out_evhor,sampling){
   return(fcst_kdss)
 }
 
-fx_fcst_kds_quickvector <- function (runvec,win_size,def_evhor,sampling,cross_overh){
-  denssmall   <- density(runvec[(def_evhor[7] - win_size[1] + 1):(def_evhor[7])])
-  denslarge   <- density(runvec[(def_evhor[7] - win_size[2] + 1):(def_evhor[7])])
-  fcstsmall   <- sample(denssmall$x, sampling, replace=TRUE, prob=denssmall$y)
-  fcstlarge   <- sample(denslarge$x, sampling, replace=TRUE, prob=denslarge$y)
-  kdsim.mean  <- rbind(t(replicate(cross_overh,fcstsmall)),t(replicate((max(ahead_t)-cross_overh),fcstlarge)))
-  kdsim.desv  <- rbind(t(replicate(cross_overh,rep(denssmall$bw,sampling))),t(replicate((max(ahead_t)-cross_overh),rep(denslarge$bw,sampling))))
-  fcst_kds_qv <- list(kdsim.mean,kdsim.desv)
-  return(fcst_kds_qv)
-}
+# fx_fcst_kdss_vec <- function (runvec,win_selec,ahead_t,out_evhor,sampling){
+#   denss    <- density(runvec[(out_evhor[7] - win_selec + 1):(out_evhor[7])])
+#   fcsts    <- sample(denss$x, sampling, replace=TRUE, prob=denss$y)
+#   kdss.mu  <- t(replicate(max(ahead_t),fcsts))
+#   kdss.bw  <- t(replicate(max(ahead_t),rep(denss$bw,sampling)))
+#   return(list(kdss.mu,kdss.bw))
+# }
+# Disabled 11/jun/17
 
-fx_fcst_armagarch <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling,cross_overh){
+# fx_fcst_kds_quickvector <- function (runvec,win_size,def_evhor,sampling,cross_overh){
+#   denssmall   <- density(runvec[(def_evhor[7] - win_size[1] + 1):(def_evhor[7])])
+#   denslarge   <- density(runvec[(def_evhor[7] - win_size[2] + 1):(def_evhor[7])])
+#   fcstsmall   <- sample(denssmall$x, sampling, replace=TRUE, prob=denssmall$y)
+#   fcstlarge   <- sample(denslarge$x, sampling, replace=TRUE, prob=denslarge$y)
+#   kdsim.mean  <- rbind(t(replicate(cross_overh,fcstsmall)),t(replicate((max(ahead_t)-cross_overh),fcstlarge)))
+#   kdsim.desv  <- rbind(t(replicate(cross_overh,rep(denssmall$bw,sampling))),t(replicate((max(ahead_t)-cross_overh),rep(denslarge$bw,sampling))))
+#   fcst_kds_qv <- list(kdsim.mean,kdsim.desv)
+#   return(fcst_kds_qv)
+# }
+# Disabled 11/jun/17
+
+fx_fcst_armagarch <- function (wm14,armalags,win_selec,ahead_t,out_evhor,sampling,cross_overh){
   fcst_armagarch <- foreach (j = 1:nrow(wm14), .packages=c("rugarch"), .export='fx_fcst_kds_quickvector') %dopar% {
     runvec       <- wm14[j,]
     # Defining ARMA lags
@@ -181,7 +192,8 @@ fx_fcst_armagarch <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling
     }
     final.ord <- final.bic[sort.list(final.bic[,3]), ]
     if (nrow(final.ord)==0) {             # if no ARMA(p,q) fits, go with kde_quickvector
-      simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh)
+      simdata <- fx_fcst_kdss(rbind(runvec),win_selec,ahead_t,out_evhor,sampling)[[1]]
+      # simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh) [bkp]
       print("foi kd1")
     } else {                              # fitting ARMA-GARCH parameters and simulating
       fit        = F
@@ -200,7 +212,8 @@ fx_fcst_armagarch <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling
         simdata <- list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
         print("foi ag")
       } else {
-        simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh)
+        simdata <- fx_fcst_kdss(rbind(runvec),win_selec,ahead_t,out_evhor,sampling)[[1]]
+        # simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh) [bkp]
         print("foi kd2")
       }
     }
@@ -209,20 +222,21 @@ fx_fcst_armagarch <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling
   return(fcst_armagarch)
 }
 
-fx_fcst_wm <- function(fcst_mc,cvcojmean,out_evhor,wm02){
-  fcst_co <- foreach (j = 1:nrow(wm02),.combine=c("rbind")) %dopar% {
-    wv36f <- matrix(ncol=out_evhor[5])
-    fcst1 <- colMeans(fcst_mc[[j]])[1]
-    fcst2 <- colMeans(fcst_mc[[j]])[3]
-    wv36f[1:cvcojmean[j]] <- as.numeric(fcst1)
-    if (cvcojmean[j]<out_evhor[5]) {
-      wv36f[cvcojmean[j]:out_evhor[5]]=as.numeric(fcst2)
-    }
-    wv33b <- wm02[j,1:(out_evhor[6] - out_evhor[7])]
-    (wv36f+wv33b)
-  }
-  return(fcst_co)
-}
+# fx_fcst_wm <- function(fcst_mc,cvcojmean,out_evhor,wm02){
+#   fcst_co <- foreach (j = 1:nrow(wm02),.combine=c("rbind")) %dopar% {
+#     wv36f <- matrix(ncol=out_evhor[5])
+#     fcst1 <- colMeans(fcst_mc[[j]])[1]
+#     fcst2 <- colMeans(fcst_mc[[j]])[3]
+#     wv36f[1:cvcojmean[j]] <- as.numeric(fcst1)
+#     if (cvcojmean[j]<out_evhor[5]) {
+#       wv36f[cvcojmean[j]:out_evhor[5]]=as.numeric(fcst2)
+#     }
+#     wv33b <- wm02[j,1:(out_evhor[6] - out_evhor[7])]
+#     (wv36f+wv33b)
+#   }
+#   return(fcst_co)
+# }
+# Disabled 11/jun/17
 
 fx_fcstgeneric <- function(fcst_mc,out_evhor,wm13){
   fcst_co <- foreach (j = 1:nrow(wm13),.combine=c("rbind")) %dopar% {
@@ -236,15 +250,16 @@ fx_fcstgeneric <- function(fcst_mc,out_evhor,wm13){
 #===========================================
 # Functions Declarations: Verification
 #===========================================
-fx_crps_mc <- function (wm04,fcst_mc,def_evhor,sampling){
-  crps_mc2 <- foreach (j = 1:nrow(wm04)) %:%
-    foreach (i = (def_evhor[4]+1):def_evhor[6], .combine=c("cbind"), .packages=c("verification")) %dopar% {
-      wv35s <- crps(rep(wm04[j,i],sampling),fcst_mc[[j]][,1:2])$CRPS
-      wv35l <- crps(rep(wm04[j,i],sampling),fcst_mc[[j]][,3:4])$CRPS
-      c(wv35s,wv35l)
-    }
-  return(crps_mc2)
-}
+# fx_crps_mc <- function (wm04,fcst_mc,def_evhor,sampling){
+#   crps_mc2 <- foreach (j = 1:nrow(wm04)) %:%
+#     foreach (i = (def_evhor[4]+1):def_evhor[6], .combine=c("cbind"), .packages=c("verification")) %dopar% {
+#       wv35s <- crps(rep(wm04[j,i],sampling),fcst_mc[[j]][,1:2])$CRPS
+#       wv35l <- crps(rep(wm04[j,i],sampling),fcst_mc[[j]][,3:4])$CRPS
+#       c(wv35s,wv35l)
+#     }
+#   return(crps_mc2)
+# }
+# Disabled 11/jun/17
 
 fx_crpsgeneric <- function (wm03,wm13,wm14,fcst_mc,def_evhor,sampling){
   crps_mc2 <- foreach (j = 1:nrow(wm14), .combine=c("rbind")) %:%
@@ -255,60 +270,63 @@ fx_crpsgeneric <- function (wm03,wm13,wm14,fcst_mc,def_evhor,sampling){
   return(crps_mc2)
 }
 
-fx_crps_wm <- function(crps_mc,cvcojmean,out_evhor,wm02){
-  crps_co <- foreach (j = 1:nrow(wm02),.combine=c("rbind")) %dopar% {
-    wv36c <- matrix(ncol=out_evhor[5])
-    wv36c[1:cvcojmean[j]] <- crps_mc[[j]][1,1:cvcojmean[j]]
-    if (cvcojmean[j]<out_evhor[5]) {
-      wv36c[cvcojmean[j]:out_evhor[5]]=crps_mc[[j]][2,cvcojmean[j]:out_evhor[5]]
-    }
-    wv36c
-  }
-  return(crps_co)
-}
+# fx_crps_wm <- function(crps_mc,cvcojmean,out_evhor,wm02){
+#   crps_co <- foreach (j = 1:nrow(wm02),.combine=c("rbind")) %dopar% {
+#     wv36c <- matrix(ncol=out_evhor[5])
+#     wv36c[1:cvcojmean[j]] <- crps_mc[[j]][1,1:cvcojmean[j]]
+#     if (cvcojmean[j]<out_evhor[5]) {
+#       wv36c[cvcojmean[j]:out_evhor[5]]=crps_mc[[j]][2,cvcojmean[j]:out_evhor[5]]
+#     }
+#     wv36c
+#   }
+#   return(crps_co)
+# }
+# Disabled 11/jun/17
+
 
 #===========================================
 # Functions Declarations: Integrations
 #===========================================
-fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
-  def_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,crossvalsize)
-  wm01       <- wm01_01[,def_evhor[2]:def_evhor[3]]                # work matrix
-  # ------ Cross Validation ----------------
-  cross_seq     <- seq(def_evhor[8],def_evhor[4]-max(ahead_t),round((def_evhor[4]-max(ahead_t)-def_evhor[7])/crossvalstps))
-  crossval_runs <- foreach (k = cross_seq, .combine=c('rbind')) %do%{
-    co_evhor    <- fx_evhor(wm01,k,0,ahead_t,s02,is_wins_weeks,0)
-    wm01cv      <- wm01[,co_evhor[2]:co_evhor[3]]                  # work matrix
-    wm02cv      <- fx_seas(wm01cv,s01,s02,sum_of_h,co_evhor)       # in-sample seasonality pattern
-    wm03cv      <- wm01cv[,(co_evhor[4]+1):co_evhor[6]]            # out-sample original load data
-    wm04cv      <- fx_unseas(wm01cv,wm02cv,s02,co_evhor)           # in-out sample unseasonalised
-    fcst_mccv   <- fx_fcst_kds(wm04cv,win_size,co_evhor,sampling)
-    crps_mccv   <- fx_crps_mc(wm04cv,fcst_mccv,co_evhor,sampling)
-    cvcoj       <- fx_crossover(fcst_mccv,crps_mccv,wm02cv,co_evhor)
-    wm05cv      <- fx_crps_wm(crps_mccv,cvcoj,co_evhor,wm02cv)
-    c(as.numeric(cvcoj),rowMeans(wm05cv))
-  }
-  cvcojmean <- foreach (a = 1:nrow(wm01),.combine=c("rbind")) %dopar%{
-    round(mean(crossval_runs[,a]))
-  }
-  cvcrpsmean <- foreach (a = (nrow(wm01)+1):(2*nrow(wm01)),.combine=c("rbind")) %dopar%{
-    mean(crossval_runs[,a])
-  }
-  if (fcst_run == F) {
-    return(list(cvcojmean,cvcrpsmean))
-  }
-  # ------ Forecasting & Verification ------
-  if (fcst_run == T) {
-    out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
-    wm02       <- fx_seas(wm01,s01,s02,sum_of_h,out_evhor)           # in-sample seasonality pattern
-    wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]               # out-sample original load data
-    wm04       <- fx_unseas(wm01,wm02,s02,out_evhor)                 # in-out sample unseasonalised
-    fcst_mc    <- fx_fcst_kds(wm04,win_size,out_evhor,sampling)
-    crps_mc    <- fx_crps_mc(wm04,fcst_mc,out_evhor,sampling)
-    wm03fcst   <- fx_fcst_wm(fcst_mc,cvcojmean,out_evhor,wm02)
-    wm05       <- fx_crps_wm(crps_mc,cvcojmean,out_evhor,wm02)
-    return(list(wm03fcst,wm05,wm04[,1:out_evhor[7]]))
-  }
-}
+# fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
+#   def_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,crossvalsize)
+#   wm01       <- wm01_01[,def_evhor[2]:def_evhor[3]]                # work matrix
+#   # ------ Cross Validation ----------------
+#   cross_seq     <- seq(def_evhor[8],def_evhor[4]-max(ahead_t),round((def_evhor[4]-max(ahead_t)-def_evhor[7])/crossvalstps))
+#   crossval_runs <- foreach (k = cross_seq, .combine=c('rbind')) %do%{
+#     co_evhor    <- fx_evhor(wm01,k,0,ahead_t,s02,is_wins_weeks,0)
+#     wm01cv      <- wm01[,co_evhor[2]:co_evhor[3]]                  # work matrix
+#     wm02cv      <- fx_seas(wm01cv,s01,s02,sum_of_h,co_evhor)       # in-sample seasonality pattern
+#     wm03cv      <- wm01cv[,(co_evhor[4]+1):co_evhor[6]]            # out-sample original load data
+#     wm04cv      <- fx_unseas(wm01cv,wm02cv,s02,co_evhor)           # in-out sample unseasonalised
+#     fcst_mccv   <- fx_fcst_kds(wm04cv,win_size,co_evhor,sampling)
+#     crps_mccv   <- fx_crps_mc(wm04cv,fcst_mccv,co_evhor,sampling)
+#     cvcoj       <- fx_crossover(fcst_mccv,crps_mccv,wm02cv,co_evhor)
+#     wm05cv      <- fx_crps_wm(crps_mccv,cvcoj,co_evhor,wm02cv)
+#     c(as.numeric(cvcoj),rowMeans(wm05cv))
+#   }
+#   cvcojmean <- foreach (a = 1:nrow(wm01),.combine=c("rbind")) %dopar%{
+#     round(mean(crossval_runs[,a]))
+#   }
+#   cvcrpsmean <- foreach (a = (nrow(wm01)+1):(2*nrow(wm01)),.combine=c("rbind")) %dopar%{
+#     mean(crossval_runs[,a])
+#   }
+#   if (fcst_run == F) {
+#     return(list(cvcojmean,cvcrpsmean))
+#   }
+#   # ------ Forecasting & Verification ------
+#   if (fcst_run == T) {
+#     out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
+#     wm02       <- fx_seas(wm01,s01,s02,sum_of_h,out_evhor)           # in-sample seasonality pattern
+#     wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]               # out-sample original load data
+#     wm04       <- fx_unseas(wm01,wm02,s02,out_evhor)                 # in-out sample unseasonalised
+#     fcst_mc    <- fx_fcst_kds(wm04,win_size,out_evhor,sampling)
+#     crps_mc    <- fx_crps_mc(wm04,fcst_mc,out_evhor,sampling)
+#     wm03fcst   <- fx_fcst_wm(fcst_mc,cvcojmean,out_evhor,wm02)
+#     wm05       <- fx_crps_wm(crps_mc,cvcojmean,out_evhor,wm02)
+#     return(list(wm03fcst,wm05,wm04[,1:out_evhor[7]]))
+#   }
+# }
+# Disabled 11/jun/17
   
 fx_int_fcstgeneric_kdss <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
   out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
@@ -323,14 +341,14 @@ fx_int_fcstgeneric_kdss <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_
   return(list(wm03fcst,wm05,wm14))
 }
 
-fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
+fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
   out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
   wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                         # work matrix
   wl02       <- fx_seas2(wm01,s01,s02,sum_of_h,out_evhor)                   # in-sample seasonality pattern (s,r,t)
   wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                        # out-sample original load data
   wm13       <- fx_unseas2(wm01,wl02,s02,out_evhor)                         # out-sample estimated trend + seas
   wm14       <- wl02[[2]]                                                   # in-sample noise
-  fcst_mc    <- fx_fcst_armagarch(wm14,armalags,win_size,ahead_t,out_evhor,sampling,cross_overh) # returns list with next ahead_t fcst and sd
+  fcst_mc    <- fx_fcst_armagarch(wm14,armalags,win_selec,ahead_t,out_evhor,sampling,cross_overh) # returns list with next ahead_t fcst and sd
   wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm13)
   wm05       <- fx_crpsgeneric(wm03,wm13,wm14,fcst_mc,out_evhor,sampling)
   return(list(wm03fcst,wm05,wm14))
@@ -351,7 +369,8 @@ fx_int_crossval_vector <- function(wm01_01,wv42,h,in_sample_fr,s01,s02,sum_of_h,
     if (use_arma == T) {
       fcst_mccv   <- fx_fcst_armagarch(wm14cv,armalags,win_size,ahead_t,co_evhor,sampling,cross_overh)
     } else {
-      fcst_mccv   <- list(fx_fcst_kds_quickvector(wm14cv,win_size,co_evhor,sampling,cross_overh))
+      fcst_mccv   <- fx_fcst_kdss(wm14cv,win_selec,ahead_t,out_evhor,sampling)
+      # fcst_mccv   <- list(fx_fcst_kds_quickvector(wm14cv,win_size,co_evhor,sampling,cross_overh)) [bkp]
     }
     wm03fcstcv  <- rbind(fx_fcstgeneric(fcst_mccv,co_evhor,wm13cv))
     wm05cv      <- fx_crpsgeneric(wm03cv,wm13cv,wm14cv,fcst_mccv,co_evhor,sampling)
@@ -398,7 +417,7 @@ fx_applgrp     <- function(optgrp,wv46,wm01_01,fx_to_use,h,in_sample_fr,s01,s02,
   opt_max_cusd  <- max(wv46)
   wm01_grpl     <- list(optgrp %*% wm01_01, optgrp)
   wm01_grp      <- wm01_grpl[[1]] / (max(rowSums(wm01_grpl[[2]]),1))
-  wl06opt       <- fx_to_use(wm01_grp,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,T,armalags,cross_overh)
+  wl06opt       <- fx_to_use(wm01_grp,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,T,armalags,cross_overh)
   wv45opt       <- as.numeric(rowMeans(wl06opt[[1]]) * rowSums(wm01_grpl[[2]]))
   sd01opt       <- as.numeric(fx_sd_mymat(wl06opt[[1]]))
   cr01opt       <- rowMeans(wl06opt[[2]])
