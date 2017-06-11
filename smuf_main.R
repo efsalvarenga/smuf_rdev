@@ -9,32 +9,25 @@
 #===========================================
 
 #===========================================
-# Libraries, Configs, Inputs
+# Initialising
 #===========================================
-# library(forecast)
-# library(verification)
-# library(doParallel)
-# library(rgenoud)
-# library(rugarch)
+setwd("~/GitRepos/smuf_rdev")
+source("smuf_fxs.R")
+savfile = "smuf_main_XXXX.rds"
 
-cl  <- makeCluster(detectCores())
-registerDoParallel(cl)
-setwd("~/GitRepos/smuf_rdev")            # set working directory
-source("smuf_fxs.R")                     # Load functions script
- 
-# wm01_00       <- readRDS("smuf_import-complete.rds")
-# importpar     <- readRDS("smuf_import-parameter.rds")
-# s01           <- importpar[1]
-# s02           <- importpar[2]
-# s03           <- importpar[3]
-# sum_of_h      <- importpar[4]
-# data_size     <- importpar[5]
-# h             <- 0
+# From smuf_import
+wm01_00       <- readRDS("smuf_import-complete.rds")
+importpar     <- readRDS("smuf_import-parameter.rds")
+s01           <- importpar[1]
+s02           <- importpar[2]
+s03           <- importpar[3]
+sum_of_h      <- importpar[4]
+data_size     <- importpar[5]
 
 #===========================================
 # Integrated Parameters
 #===========================================
-cus_list      <- seq(1,20)
+cus_list      <- seq(1,100)
 frontierstp   <- 20                      # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
@@ -52,6 +45,9 @@ armalags      <- c(8,8)                  # Max lags for ARIMA fit in ARMA-GARCH 
 #===========================================
 # BIG [h] LOOP Start
 #===========================================
+bighlpopgr <- list()
+bighlpcrps <- list()
+
 for (h in hrz_lim){
   ptm    <- proc.time()
   runkey <- Sys.time()
@@ -122,30 +118,36 @@ for (h in hrz_lim){
                            }
   bighlpopgr   <- fx_sav_optgrps(c("cvkd",h,frontierstp,length(cus_list),crossvalstps,armalags,runkey),optgrp_cvkd)
   res_crps_kd  <- fx_applgrp(optgrp_cvkd,wv46,wm01_01,fx_int_fcst_kdcv,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
+  res_crps_ag  <- fx_applgrp(optgrp_cvkd,wv46,wm01_01,fx_int_fcstgeneric_armagarch,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
   
-  cat("[OptCVAG] ")
-  optgrp_cvag  <- foreach (i = 1:frontierstp,
-                           .packages=c("forecast","rgenoud","foreach"),
-                           .export=c('fcst_mccv'),
-                           .combine=c("rbind")) %dopar% {
-                             opt_min_cusd  = wv46[i]
-                             opt_max_cusd  = wv46[i+1]
-                             optgrp   <- genoud(fx_optgrp_crps, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
-                                                starting.values=c(rep(1,nrow(wm01_01))), Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
-                                                data.type.int=TRUE,  int.seed=1, print.level=1,
-                                                use_arma=T)
-                             if(optgrp$value == 10) {
-                               grouped = c(rep(0,nrow(wm01_01)))
-                             } else {
-                               grouped = optgrp$par
-                             }
-                             grouped
-                           }
-  bighlpopgr   <- fx_sav_optgrps(c("cvag",h,frontierstp,length(cus_list),crossvalstps,armalags,runkey),optgrp_cvag)
-  res_crps_ag  <- fx_applgrp(optgrp_cvag,wv46,wm01_01,fx_int_fcst_kdcv,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
+  # cat("[OptCVAG] ")
+  # optgrp_cvag  <- foreach (i = 1:frontierstp,
+  #                          .packages=c("forecast","rgenoud","foreach"),
+  #                          .export=c('fcst_mccv'),
+  #                          .combine=c("rbind")) %dopar% {
+  #                            opt_min_cusd  = wv46[i]
+  #                            opt_max_cusd  = wv46[i+1]
+  #                            optgrp   <- genoud(fx_optgrp_crps, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
+  #                                               starting.values=c(rep(1,nrow(wm01_01))), Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
+  #                                               data.type.int=TRUE,  int.seed=1, print.level=1,
+  #                                               use_arma=T)
+  #                            if(optgrp$value == 10) {
+  #                              grouped = c(rep(0,nrow(wm01_01)))
+  #                            } else {
+  #                              grouped = optgrp$par
+  #                            }
+  #                            grouped
+  #                          }
+  # bighlpopgr   <- fx_sav_optgrps(c("cvag",h,frontierstp,length(cus_list),crossvalstps,armalags,runkey),optgrp_cvag)
+  # res_crps_ag  <- fx_applgrp(optgrp_cvag,wv46,wm01_01,fx_int_fcst_kdcv,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
 
   bighlpcrps   <- fx_sav_optress(c("sdev+crps_kd+ag",h,frontierstp,length(cus_list),crossvalstps,armalags,runkey),
                                  list(c(h,frontierstp,length(cus_list)),cbind(cr01rnd,wv45rnd),res_sdev_kd,res_sdev_ag,res_crps_kd,res_crps_ag))
   fx_plt_rnd_vs_opt(bighlpcrps[[length(bighlpcrps)]][[2]],c(0.01,0.04),c(0,8),"CRPS")
   print(proc.time() - ptm)
 }
+
+#===========================================
+# Outputs
+#===========================================
+saveRDS(list(bighlpopgr,bighlpcrps),  file=savfile)

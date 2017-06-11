@@ -113,16 +113,14 @@ fx_sd_mymat <- function (mymat){
 }
 
 fx_sav_optgrps <- function (conf2save,optgrp){
-  bighlpopgr <- readRDS("smuf_main-optgrp.rds")
   bighlpopgr[[(length(bighlpopgr)+1)]] <- list(conf2save,optgrp)
-  saveRDS(bighlpopgr,  file="smuf_main-optgrp.rds")
+  saveRDS(bighlpopgr,  file="smuf_main_temp-optgrp.rds")
   return(bighlpopgr)
 }
 
 fx_sav_optress <- function (conf2save,optres){
-  bighlpcrps <- readRDS("smuf_main-optres.rds")
   bighlpcrps[[(length(bighlpcrps)+1)]] <- list(conf2save,optres)
-  saveRDS(bighlpcrps,  file="smuf_main-optres.rds")
+  saveRDS(bighlpcrps,  file="smuf_main_temp-optres.rds")
   return(bighlpcrps)
 }
 
