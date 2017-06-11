@@ -9,19 +9,10 @@
 #===========================================
 
 #===========================================
-# Libraries, Inputs
+# Initialising
 #===========================================
-library(forecast)
-library(verification)
-library(doParallel)
-library(rgenoud)
-library(rugarch)
-
-ptm <- proc.time() # Start the clock!
-cl  <- makeCluster(detectCores())
-registerDoParallel(cl)
 setwd("~/GitRepos/smuf_rdev")
-source("smuf_fxs.R")                     # Load functions script
+source("smuf_fxs.R")
 savfile = "smuf_compare_0611_1100.rds"
 
 # From smuf_import
@@ -36,22 +27,18 @@ data_size     <- importpar[5]
 #===========================================
 # Integrated Parameters
 #===========================================
-cus_list      <- seq(1,100)
+cus_list      <- seq(1,50)
 # frontierstp   <- 5                     # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
-hrz_lim       <- seq(1,5)*667
+hrz_lim       <- seq(1,12)*667
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 crossvalstps  <- 2                       # Steps used for multiple crossvalidation (Only KDE)
 is_wins_weeks <- 12                      # Number of weeks used for in-sample (KDE uses win_size) & seasonality
 sampling      <- 1024                    # For monte-carlo CRPS calculation
 armalags      <- c(8,8)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)
-
-#===========================================
-# Functions Declarations
-#===========================================
 
 #===========================================
 # BIG [h] LOOP Start
@@ -61,7 +48,8 @@ crpsagmath <- matrix(nrow=0,ncol=max(ahead_t))
 crpskdmatc <- matrix(nrow=0,ncol=(max(cus_list)-min(cus_list)+1))
 crpsagmatc <- matrix(nrow=0,ncol=(max(cus_list)-min(cus_list)+1))
 for (h in hrz_lim){
-  cl  <- makeCluster(detectCores())   # reset parallel workers
+  ptm <- proc.time()                  # Reset clock
+  cl  <- makeCluster(detectCores())   # Reset workers
   registerDoParallel(cl)
   cat("\n\nStep",match(h,hrz_lim), "of",length(hrz_lim),"| Running BIG [h] LOOP with h =",h,"\n")
   wm01_01    <- wm01_00[min(cus_list):max(cus_list),]
