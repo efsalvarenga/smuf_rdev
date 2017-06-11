@@ -13,7 +13,7 @@
 #===========================================
 setwd("~/GitRepos/smuf_rdev")
 source("smuf_fxs.R")
-savfile = "smuf_run_0611_1340.rds"
+savfile = "smuf_run_0611_1400.rds"
 
 # From smuf_import
 wm01_00       <- readRDS("smuf_import-complete.rds")
@@ -28,7 +28,7 @@ data_size     <- importpar[5]
 # Integrated Parameters
 #===========================================
 cus_list      <- seq(1,100)
-frontierstp   <- 20                      # Number of demand bins (Stepwise frontier for portfolio optimisation)
+frontierstp   <- 10                      # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
@@ -45,7 +45,6 @@ armalags      <- c(8,8)                  # Max lags for ARIMA fit in ARMA-GARCH 
 
 #===========================================
 # Call simulator
-#===========================================
-
+#===========================================s
 source("smuf_main.R")
 saveRDS(list(bighlpopgr,bighlpcrps),  file=savfile)
