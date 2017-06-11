@@ -110,5 +110,6 @@ for (h in hrz_lim){
   bighlpcrps   <- fx_sav_optress(c("sdev+crps_kd+ag",h,frontierstp,length(cus_list),crossvalstps,armalags,runkey),
                                  list(c(h,frontierstp,length(cus_list)),cbind(cr01rnd,wv45rnd),res_sdev_kd,res_sdev_ag,res_crps_kd,res_crps_ag))
   fx_plt_rnd_vs_opt(bighlpcrps[[length(bighlpcrps)]][[2]],c(0.01,0.04),c(0,8),"CRPS")
+  cat("\n")
   print(proc.time() - ptm)
 }

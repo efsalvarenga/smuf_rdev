@@ -139,6 +139,22 @@ fx_fcst_kds <- function (wm04,win_size,def_evhor,sampling){
   return(fcst_mc2)
 }
 
+fx_fcst_kdss <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling,cross_overh){
+  fcst_kdss  <- foreach (j = 1:nrow(wm14), .packages=c("rugarch"), .export='fx_fcst_kds_quickvector') %dopar% {
+
+    denss    <- density(wm14[j,(out_evhor[7] - win_size + 1):(out_evhor[7])])
+    fcsts    <- sample(denss$x, sampling, replace=TRUE, prob=denss$y)
+    kdss.mu  <- rbind(t(replicate(cross_overh,fcstsmall)),t(replicate((max(ahead_t)-cross_overh),fcstlarge)))
+    kdss.sd  <- rbind(t(replicate(cross_overh,rep(denssmall$bw,sampling))),t(replicate((max(ahead_t)-cross_overh),rep(denslarge$bw,sampling))))
+    fcst_kds_qv <- list(kdsim.mean,kdsim.desv)
+    
+    
+    simdata  <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh)
+    simdata
+  }
+  return(fcst_armagarch)
+}
+
 fx_fcst_kds_quickvector <- function (runvec,win_size,def_evhor,sampling,cross_overh){
   denssmall   <- density(runvec[(def_evhor[7] - win_size[1] + 1):(def_evhor[7])])
   denslarge   <- density(runvec[(def_evhor[7] - win_size[2] + 1):(def_evhor[7])])
