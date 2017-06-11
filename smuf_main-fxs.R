@@ -139,20 +139,15 @@ fx_fcst_kds <- function (wm04,win_size,def_evhor,sampling){
   return(fcst_mc2)
 }
 
-fx_fcst_kdss <- function (wm14,armalags,win_size,ahead_t,out_evhor,sampling,cross_overh){
-  fcst_kdss  <- foreach (j = 1:nrow(wm14), .packages=c("rugarch"), .export='fx_fcst_kds_quickvector') %dopar% {
-
-    denss    <- density(wm14[j,(out_evhor[7] - win_size + 1):(out_evhor[7])])
+fx_fcst_kdss <- function (wm14,win_selec,ahead_t,out_evhor,sampling){
+  fcst_kdss  <- foreach (j = 1:nrow(wm14), .packages=c("rugarch")) %dopar% {
+    denss    <- density(wm14[j,(out_evhor[7] - win_selec + 1):(out_evhor[7])])
     fcsts    <- sample(denss$x, sampling, replace=TRUE, prob=denss$y)
-    kdss.mu  <- rbind(t(replicate(cross_overh,fcstsmall)),t(replicate((max(ahead_t)-cross_overh),fcstlarge)))
-    kdss.sd  <- rbind(t(replicate(cross_overh,rep(denssmall$bw,sampling))),t(replicate((max(ahead_t)-cross_overh),rep(denslarge$bw,sampling))))
-    fcst_kds_qv <- list(kdsim.mean,kdsim.desv)
-    
-    
-    simdata  <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh)
-    simdata
+    kdss.mu  <- t(replicate(max(ahead_t),fcsts))
+    kdss.bw  <- t(replicate(max(ahead_t),rep(denss$bw,sampling)))
+    list(kdss.mu,kdss.bw)
   }
-  return(fcst_armagarch)
+  return(fcst_kdss)
 }
 
 fx_fcst_kds_quickvector <- function (runvec,win_size,def_evhor,sampling,cross_overh){
@@ -313,6 +308,19 @@ fx_int_fcst_kdcv <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is
     wm05       <- fx_crps_wm(crps_mc,cvcojmean,out_evhor,wm02)
     return(list(wm03fcst,wm05,wm04[,1:out_evhor[7]]))
   }
+}
+  
+fx_int_fcstgeneric_kdss <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
+  out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
+  wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                         # work matrix
+  wl02       <- fx_seas2(wm01,s01,s02,sum_of_h,out_evhor)                   # in-sample seasonality pattern (s,r,t)
+  wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                        # out-sample original load data
+  wm13       <- fx_unseas2(wm01,wl02,s02,out_evhor)                         # out-sample estimated trend + seas
+  wm14       <- wl02[[2]]                                                   # in-sample noise
+  fcst_mc    <- fx_fcst_kdss(wm14,win_selec,ahead_t,out_evhor,sampling)     # returns list with next ahead_t fcst and sd
+  wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm13)
+  wm05       <- fx_crpsgeneric(wm03,wm13,wm14,fcst_mc,out_evhor,sampling)
+  return(list(wm03fcst,wm05,wm14))
 }
 
 fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
