@@ -67,13 +67,13 @@ for (h in hrz_lim){
   cat("[OptCVKD] ")
   optgrp_cvkd  <- foreach (i = 1:frontierstp,
                            .packages=c("forecast","rgenoud","foreach"),
-                           # .export=c('fcst_mccv'),    #problema??
-                           .combine=c("rbind")) %do% {
+                           # .export=c('fcst_mccv'),    #nao precisa mais??
+                           .combine=c("rbind")) %dopar% {
                              opt_min_cusd  = wv46[i]
                              opt_max_cusd  = wv46[i+1]
                              optgrp   <- genoud(fx_optgrp_crps, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
                                                 starting.values=c(rep(1,nrow(wm01_01))), Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
-                                                data.type.int=TRUE,  int.seed=1, print.level=2,
+                                                data.type.int=TRUE,  int.seed=1, print.level=1,
                                                 use_arma=F)
                              if(optgrp$value == 10) {
                                grouped = c(rep(0,nrow(wm01_01)))
