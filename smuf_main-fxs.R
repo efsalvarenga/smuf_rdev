@@ -114,13 +114,13 @@ fx_sd_mymat <- function (mymat){
 
 fx_sav_optgrps <- function (conf2save,optgrp){
   bighlpopgr[[(length(bighlpopgr)+1)]] <- list(conf2save,optgrp)
-  saveRDS(bighlpopgr,  file="smuf_main_temp-optgrp.rds")
+  saveRDS(bighlpopgr,  file="smuf_temp-optgrp.rds")
   return(bighlpopgr)
 }
 
 fx_sav_optress <- function (conf2save,optres){
   bighlpcrps[[(length(bighlpcrps)+1)]] <- list(conf2save,optres)
-  saveRDS(bighlpcrps,  file="smuf_main_temp-optres.rds")
+  saveRDS(bighlpcrps,  file="smuf_temp-optres.rds")
   return(bighlpcrps)
 }
 
@@ -172,8 +172,8 @@ fx_fcst_kdss <- function (wm14,win_selec,ahead_t,out_evhor,sampling){
 # }
 # Disabled 11/jun/17
 
-fx_fcst_armagarch <- function (wm14,armalags,win_selec,ahead_t,out_evhor,sampling,cross_overh){
-  fcst_armagarch <- foreach (j = 1:nrow(wm14), .packages=c("rugarch"), .export='fx_fcst_kds_quickvector') %dopar% {
+fx_fcst_armagarch <- function (wm14,armalags,win_selec,ahead_t,out_evhor,sampling,cross_overh,gof.min){
+  fcst_armagarch <- foreach (j = 1:nrow(wm14), .packages=c("rugarch","doParallel"), .export='fx_fcst_kdss') %dopar% {
     runvec       <- wm14[j,]
     # Defining ARMA lags
     final.bic <- matrix(nrow=0,ncol=4)
@@ -207,7 +207,7 @@ fx_fcst_armagarch <- function (wm14,armalags,win_selec,ahead_t,out_evhor,samplin
         if(final.ordl <= nrow(final.ord)) {final.ordl = final.ordl+1}
         next
       }
-      if (gof(fit, groups=c(2016))[3] >= 0.05) {
+      if (gof(fit, groups=c(2016))[3] >= gof.min) {
         sim1    <- ugarchsim(fit, n.sim = max(ahead_t), m.sim = sampling)
         simdata <- list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
         print("foi ag")
@@ -328,7 +328,7 @@ fx_crpsgeneric <- function (wm03,wm13,wm14,fcst_mc,def_evhor,sampling){
 # }
 # Disabled 11/jun/17
   
-fx_int_fcstgeneric_kdss <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
+fx_int_fcstgeneric_kdss <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh,gof.min){
   out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
   wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                         # work matrix
   wl02       <- fx_seas2(wm01,s01,s02,sum_of_h,out_evhor)                   # in-sample seasonality pattern (s,r,t)
@@ -341,14 +341,14 @@ fx_int_fcstgeneric_kdss <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_
   return(list(wm03fcst,wm05,wm14))
 }
 
-fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh){
+fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh,gof.min){
   out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
   wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                         # work matrix
   wl02       <- fx_seas2(wm01,s01,s02,sum_of_h,out_evhor)                   # in-sample seasonality pattern (s,r,t)
   wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                        # out-sample original load data
   wm13       <- fx_unseas2(wm01,wl02,s02,out_evhor)                         # out-sample estimated trend + seas
   wm14       <- wl02[[2]]                                                   # in-sample noise
-  fcst_mc    <- fx_fcst_armagarch(wm14,armalags,win_selec,ahead_t,out_evhor,sampling,cross_overh) # returns list with next ahead_t fcst and sd
+  fcst_mc    <- fx_fcst_armagarch(wm14,armalags,win_selec,ahead_t,out_evhor,sampling,cross_overh,gof.min) # returns list with next ahead_t fcst and sd
   wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm13)
   wm05       <- fx_crpsgeneric(wm03,wm13,wm14,fcst_mc,out_evhor,sampling)
   return(list(wm03fcst,wm05,wm14))
@@ -417,7 +417,7 @@ fx_applgrp     <- function(optgrp,wv46,wm01_01,fx_to_use,h,in_sample_fr,s01,s02,
   opt_max_cusd  <- max(wv46)
   wm01_grpl     <- list(optgrp %*% wm01_01, optgrp)
   wm01_grp      <- wm01_grpl[[1]] / (max(rowSums(wm01_grpl[[2]]),1))
-  wl06opt       <- fx_to_use(wm01_grp,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,T,armalags,cross_overh)
+  wl06opt       <- fx_to_use(wm01_grp,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,T,armalags,cross_overh,gof.min)
   wv45opt       <- as.numeric(rowMeans(wl06opt[[1]]) * rowSums(wm01_grpl[[2]]))
   sd01opt       <- as.numeric(fx_sd_mymat(wl06opt[[1]]))
   cr01opt       <- rowMeans(wl06opt[[2]])
