@@ -82,7 +82,7 @@ for (h in hrz_lim){
                              }
                              grouped
                            }
-  bighlpopgr   <- fx_sav_optgrps(c("cvkd",h,frontierstp,length(cus_list),crossvalstps,armalags,runkey),optgrp_cvkd)
+  bighlpopgr   <- fx_sav_optgrps(c("cvkd",h,frontierstp,length(cus_list),crossvalstps,armalags,crossvalfocus,runkey),optgrp_cvkd)
   res_crps_kd  <- fx_applgrp(optgrp_cvkd,wv46,wm01_01,fx_int_fcstgeneric_kdss,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
   res_crps_ag  <- fx_applgrp(optgrp_cvkd,wv46,wm01_01,fx_int_fcstgeneric_armagarch,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
   
@@ -104,7 +104,7 @@ for (h in hrz_lim){
   #                            }
   #                            grouped
   #                          }
-  # bighlpopgr   <- fx_sav_optgrps(c("cvag",h,frontierstp,length(cus_list),crossvalstps,armalags,runkey),optgrp_cvag)
+  # bighlpopgr   <- fx_sav_optgrps(c("cvag",h,frontierstp,length(cus_list),crossvalstps,armalags,crossvalfocus,runkey),optgrp_cvag)
   # res_crps_ag  <- fx_applgrp(optgrp_cvag,wv46,wm01_01,fx_int_fcstgeneric_armagarch,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
 
   bighlpcrps   <- fx_sav_optress(c("sdev+crps_kd+ag",h,frontierstp,length(cus_list),crossvalstps,armalags,runkey),

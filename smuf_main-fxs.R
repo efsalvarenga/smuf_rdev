@@ -374,7 +374,7 @@ fx_int_crossval_vector <- function(wm01_01,wv42,h,in_sample_fr,s01,s02,sum_of_h,
     }
     wm03fcstcv  <- rbind(fx_fcstgeneric(fcst_mccv,co_evhor,wm13cv))
     wm05cv      <- fx_crpsgeneric(wm03cv,wm13cv,wm14cv,fcst_mccv,co_evhor,sampling)
-    mean(wm05cv[1,1:crossvalfocus])
+    mean(wm05cv[1,crossvallfocus[1]:crossvalfocus[2]])
   }
   return(mean(crossval_runs))
 }
