@@ -15,5 +15,11 @@ source("smuf_main-fxs.R")
 #smuf_main run results
 
 smuf_run_read  <- readRDS("smuf_run_0611_1400.rds")
-res.bighlpopgr <- smuf_run_read[[1]]
-res.bighlpcrps <- smuf_run_read[[2]]
+res.hlp.opgr   <- smuf_run_read[[1]]
+res.hlp.crps   <- smuf_run_read[[2]]
+
+myleg = c("Random","Sdev KDS","Sdev ARMA-GARCH","Crossval CRPS KDS","Crossval CRPS ARMA-GARCH")
+for (i in 1:length(res.hlp.crps)) {
+  fx_plt_rnd_vs_opt(res.hlp.crps[[i]][[2]],c(0,0.04),c(0,32),,"CRPS")
+}
+

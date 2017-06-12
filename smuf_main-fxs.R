@@ -455,7 +455,7 @@ fx_plt_mymat <- function(wm05,myrangey){
   # lines(wm05mean, type="l", lwd=3, lty=linetype[2])
 }
 
-fx_plt_rnd_vs_opt <- function(bighlp,myrangex,myrangey,xunit) {
+fx_plt_rnd_vs_opt <- function(bighlp,myrangex,myrangey,myleg,xunit) {
   plot(myrangex,myrangey, bty="n", type="n", xlab=xunit,
        ylab="Mean Demand",main=paste("optimum vs random groups for h =",bighlp[[1]][[1]][1]))
   grid (NA,NULL, lty = 'dotted')
@@ -464,6 +464,6 @@ fx_plt_rnd_vs_opt <- function(bighlp,myrangex,myrangey,xunit) {
   for (i in 3:length(bighlp)){
     points(bighlp[[i]][,1],bighlp[[i]][,2],col=mycolors[i-2],pch=20)
   }
-  legend('topright', inset=c(0,0), legend = c("random","opt_sdev_kd","opt_sdev_ag","opt_crps_kd","opt_crps_ag"),
+  legend('topright', inset=c(0,0), legend = myleg,
          lty=1, col=c("gray80",mycolors), bty='n', cex=.75, title="Grouping")
 }
