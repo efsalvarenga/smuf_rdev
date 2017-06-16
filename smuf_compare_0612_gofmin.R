@@ -73,13 +73,13 @@ for (h in hrz_lim){
   }
   rownames(resmat.h) <- c(paste("AG",1:length(gof.minseq)),paste("KD",1:2))
   plt.names <- rownames(resmat.h)
-  fx_plt_mymat(resmat.h,c(0.05,0.10))
-  legend('topright', inset=c(0,0), legend = plt.names,
+  fx_plt_mymat(resmat.h,c(0.08,0.12))
+  legend('topright', inset=c(-0.15,-0.2), legend = plt.names,
          lty=1, col=rainbow(length(plt.names)), bty='n', cex=.75, title="Method")
   print(proc.time() - ptm)
   saveRDS(list(resmat.h,reslis.h),  file="smuf_temp_compare.rds")
 }
-
+# AG6 was best (gof.min should be ~ 0.2)
 #===========================================
 # Outputs
 #===========================================
