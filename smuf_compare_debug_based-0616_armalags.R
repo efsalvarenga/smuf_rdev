@@ -11,10 +11,10 @@
 #===========================================
 # Initialising
 #===========================================
+source("smuf_main-fxs.R")
 cl  <- makeCluster(detectCores())
 registerDoParallel(cl)
 setwd("~/GitRepos/smuf_rdev")
-source("smuf_main-fxs.R")
 savfile = "smuf_compare_debug_based-0616_armalags.rds"
 
 # From smuf_import
@@ -30,7 +30,7 @@ data_size     <- importpar[5]
 # Integrated Parameters
 #===========================================
 # change for superun: cus 1000, hrz_lim steps, gof steps, arma-lags 10
-cus_list      <- seq(1,1000)
+cus_list      <- seq(978,980)
 # frontierstp   <- 5                     # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 win_selec     <- win_size[2]
@@ -43,14 +43,14 @@ crossvalstps  <- 2                       # Steps used for multiple crossvalidati
 is_wins_weeks <- 12                      # Number of weeks used for in-sample (KDE uses win_size) & seasonality
 sampling      <- 1024                    # For monte-carlo CRPS calculation
 armalags      <- c(8,8)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)
-gof.min       <- 0.2                     # GoF crossover value to change ARMA-GARCH to KDS
+gof.min       <- 0.05                    # GoF crossover value to change ARMA-GARCH to KDS
 armalagsseq   <- seq(1,10)
 
 #===========================================
 # BIG [h] LOOP Start
 #===========================================
 resmat.h  <- matrix(nrow=0,ncol=max(ahead_t))
-reslis.h  <- rep(list(crpsmat.h),length(armalagsseq)+2)
+reslis.h  <- rep(list(resmat.h),length(armalagsseq)+2)
 for (h in hrz_lim){
   ptm <- proc.time()                  # Reset clock
   cat("\n\nStep",match(h,hrz_lim), "of",length(hrz_lim),"| Running BIG [h] LOOP with h =",h,"\n")
@@ -59,6 +59,7 @@ for (h in hrz_lim){
   wl06kdWS2  <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size[2],is_wins_weeks,crossvalsize,T,armalags,cross_overh,gof.min)
   # wl06kd     <- fx_int_fcst_kdcv(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,T,armalags,cross_overh)
   wl06ag <- foreach (g = 1:length(armalagsseq)) %do% {
+    print(g)
     armalags = c(g,g)
     fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,T,armalags,cross_overh,gof.min)
     }
