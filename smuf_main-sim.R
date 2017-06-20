@@ -24,7 +24,7 @@ for (h in hrz_lim){
   #===========================================
   cat("[Ind] ")
   wm01_01    <- wm01_00[min(cus_list):max(cus_list),]
-  wl06       <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh)
+  wl06       <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh,gof.min)
   wv45       <- rowMeans(wl06[[1]])
   sd01       <- as.numeric(fx_sd_mymat(wl06[[3]]))
   wv46       <- seq(0,frontierstp)^2/frontierstp^2 * sum(wv45)
@@ -35,7 +35,7 @@ for (h in hrz_lim){
   cat("[Rnd] ")
   wm01_02l   <- fx_rndgrp(wm01_01,frontierstp)
   wm01_02    <- wm01_02l[[1]] / rowSums(wm01_02l[[2]])
-  wl06rnd    <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh)
+  wl06rnd    <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh,gof.min)
   wv45rnd    <- as.numeric(rowMeans(wl06rnd[[1]]) * rowSums(wm01_02l[[2]]))
   # sd01rnd    <- as.numeric(fx_sd_mymat(wl06rnd[[3]]))
   cr01rnd    <- rowMeans(wl06rnd[[2]])

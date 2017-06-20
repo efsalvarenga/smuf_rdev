@@ -204,17 +204,25 @@ fx_fcst_armagarch <- function (wm14,armalags,win_selec,ahead_t,out_evhor,samplin
                           distribution.model="sged")
         fit = tryCatch(ugarchfit(spec, runvec, solver = 'hybrid'),
                        error=function(err) FALSE, warning=function(err) FALSE)
-        if(final.ordl <= nrow(final.ord)) {final.ordl = final.ordl+1}
-        next
+        if((final.ordl+1) < nrow(final.ord)) {
+          final.ordl = final.ordl+1
+        } else {
+          break
+        }
       }
-      if (gof(fit, groups=c(2016))[3] >= gof.min) {
-        sim1    <- ugarchsim(fit, n.sim = max(ahead_t), m.sim = sampling)
-        simdata <- list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
-        print("foi ag")
-      } else {
+      if (!is.logical(fit) == F) {
         simdata <- fx_fcst_kdss(rbind(runvec),win_selec,ahead_t,out_evhor,sampling)[[1]]
-        # simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh) [bkp]
-        print("foi kd2")
+        print("foi kdb")
+      } else {
+        if (gof(fit, groups=c(2016))[3] >= gof.min) {
+          sim1    <- ugarchsim(fit, n.sim = max(ahead_t), m.sim = sampling)
+          simdata <- list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
+          print("foi ag")
+        } else {
+          simdata <- fx_fcst_kdss(rbind(runvec),win_selec,ahead_t,out_evhor,sampling)[[1]]
+          # simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh) [bkp]
+          print("foi kd2")
+        }
       }
     }
     simdata
