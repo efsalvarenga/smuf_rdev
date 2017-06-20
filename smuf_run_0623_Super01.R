@@ -13,7 +13,7 @@
 #===========================================
 setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
-savfile = "smuf_run_0612_2100.rds"
+savfile = "smuf_run_0623_Super01.rds"
 
 wm01_00       <- readRDS("smuf_import-complete.rds")
 importpar     <- readRDS("smuf_import-parameter.rds")
@@ -26,20 +26,20 @@ data_size     <- importpar[5]
 #===========================================
 # Integrated Parameters
 #===========================================
-cus_list      <- seq(1,100)
-frontierstp   <- 14                      # Number of demand bins (Stepwise frontier for portfolio optimisation)
+cus_list      <- seq(1,1000)
+frontierstp   <- 150                     # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
-win_selec     <- win_size[1]
+win_selec     <- win_size[2]
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
-hrz_lim       <- seq(0,1)*2069
+hrz_lim       <- seq(0,50)*377
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 crossvalstps  <- 16                      # Steps used for multiple crossvalidation (Only KDE)
 crossvalfocus <- c(1,4)                  # What period is focused when running crossvalidation
 is_wins_weeks <- 12                      # Number of weeks used for in-sample (KDE uses win_size) & seasonality
 sampling      <- 1024                    # For monte-carlo CRPS calculation
-armalags      <- c(8,8)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)
+armalags      <- c(3,3)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)
 
 #===========================================
 # Call simulator
