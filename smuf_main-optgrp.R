@@ -13,6 +13,7 @@
 #===========================================
 bighlpopgr <- list()
 bighlpcrps <- list()
+myleg = c("Random","Sdev KDS","Sdev ARMA-GARCH","Crossval CRPS KDS","Crossval CRPS ARMA-GARCH")
 
 for (h in hrz_lim){
   ptm    <- proc.time()
@@ -49,7 +50,7 @@ for (h in hrz_lim){
                            .combine=c("rbind")) %dopar% {
                              opt_min_cusd  = wv46[i]
                              opt_max_cusd  = wv46[i+1]
-                             optgrp   <- genoud(fx_optgrp_sdev, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
+                             optgrp   <- genoud(fx_optgrp_sdev, nvars=nrow(wm01_01), max.generations=max.gen, wait.generations=waitgen,
                                                 starting.values=c(rep(1,nrow(wm01_01))), Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
                                                 data.type.int=TRUE,  int.seed=1,
                                                 print.level=1)
@@ -72,7 +73,7 @@ for (h in hrz_lim){
                              .combine=c("rbind")) %dopar% {
                                opt_min_cusd  = wv46[i]
                                opt_max_cusd  = wv46[i+1]
-                               optgrp   <- genoud(fx_optgrp_crps, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
+                               optgrp   <- genoud(fx_optgrp_crps, nvars=nrow(wm01_01), max.generations=max.gen, wait.generations=waitgen,
                                                   starting.values=c(rep(1,nrow(wm01_01))), Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
                                                   data.type.int=TRUE,  int.seed=1, print.level=1,
                                                   use_arma=F)
@@ -96,7 +97,7 @@ for (h in hrz_lim){
                              .combine=c("rbind")) %dopar% {
                                opt_min_cusd  = wv46[i]
                                opt_max_cusd  = wv46[i+1]
-                               optgrp   <- genoud(fx_optgrp_crps, nvars=nrow(wm01_01), max.generations=300, wait.generations=20,
+                               optgrp   <- genoud(fx_optgrp_crps, nvars=nrow(wm01_01), max.generations=max.gen, wait.generations=waitgen,
                                                   starting.values=c(rep(1,nrow(wm01_01))), Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
                                                   data.type.int=TRUE,  int.seed=1, print.level=1,
                                                   use_arma=T)
@@ -119,7 +120,8 @@ for (h in hrz_lim){
                                    list(c(h,frontierstp,length(cus_list)),cbind(cr01rnd,wv45rnd),res_sdev_kd,res_sdev_ag))#,res_crps_kd,res_crps_ag))
   }
   saveRDS(list(bighlpopgr,bighlpcrps),  file=savfile)
-  fx_plt_rnd_vs_opt(bighlpcrps[[length(bighlpcrps)]][[2]],c(0,0.1),c(0,sum(wv45)),"CRPS")
+  
+  fx_plt_rnd_vs_opt(bighlpcrps[[length(bighlpcrps)]][[2]],c(0,0.1),c(0,sum(wv45)),myleg,"CRPS")
   cat("\n")
   print(proc.time() - ptm)
 }
