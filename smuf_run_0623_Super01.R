@@ -48,5 +48,5 @@ gof.min       <- 0.05                    # GoF crossover value to change ARMA-GA
 #===========================================
 OptCVKD = F
 OptCVAG = F
-source("smuf_main-sim.R")
+source("smuf_main-optgrp.R")
 saveRDS(list(bighlpopgr,bighlpcrps),  file=savfile)
