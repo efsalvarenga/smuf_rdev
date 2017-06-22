@@ -27,8 +27,8 @@ ds_len  <- s02*4
 plot1   <- as.data.frame(t(wm01_00[1:cus_no,ds_ini:(ds_ini+ds_len-1)]))
 plot1   <- cbind(seq(1,ds_len),plot1)
 colnames(plot1) <- c("Time",paste("Cus",1:cus_no,sep=""))
-ggplot(plot1, aes(Time,Cus1))+geom_line(color="firebrick") + 
-  labs(title="Example of demand pattern for one customer") +
+ggplot(plot1, aes(Time,Cus7))+geom_line(color="firebrick") + 
+  # labs(title="Example of demand pattern for one customer") +
   theme(plot.title = element_text(hjust = 0.5)) +
   labs(x = "Hours (4 weeks)", y = "Energy demand (KWh)")
 
