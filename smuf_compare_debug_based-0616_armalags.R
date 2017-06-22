@@ -30,13 +30,13 @@ data_size     <- importpar[5]
 # Integrated Parameters
 #===========================================
 # change for superun: cus 1000, hrz_lim steps, gof steps, arma-lags 10
-cus_list      <- seq(978,980)
+cus_list      <- seq(1,1000)
 # frontierstp   <- 5                     # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 win_selec     <- win_size[2]
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
-hrz_lim       <- seq(1,20)*337
+hrz_lim       <- seq(2,20)*337
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 crossvalstps  <- 2                       # Steps used for multiple crossvalidation (Only KDE)
@@ -74,7 +74,7 @@ for (h in hrz_lim){
   }
   rownames(resmat.h) <- c(paste("AG",1:length(armalagsseq)),paste("KD",1:2))
   plt.names <- rownames(resmat.h)
-  fx_plt_mymat(resmat.h,c(0.1,0.14))
+  fx_plt_mymat(resmat.h,c(0,0.2))
   legend('topright', inset=c(-0.15,-0.2), legend = plt.names,
          lty=1, col=rainbow(length(plt.names)), bty='n', cex=.75, title="Method")
   print(proc.time() - ptm)

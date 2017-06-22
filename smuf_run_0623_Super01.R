@@ -26,13 +26,14 @@ data_size     <- importpar[5]
 #===========================================
 # Integrated Parameters
 #===========================================
-cus_list      <- seq(1,1000)
-frontierstp   <- 150                     # Number of demand bins (Stepwise frontier for portfolio optimisation)
+#cus_list to 1000, stp to 150 (detectcores), hrz_lim larger
+cus_list      <- seq(1,200)
+frontierstp   <- 22                     # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 win_selec     <- win_size[2]
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1, (24/sum_of_h))   # Up to s02
-hrz_lim       <- seq(0,50)*377
+hrz_lim       <- seq(2,3)*377
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 crossvalstps  <- 16                      # Steps used for multiple crossvalidation (Only KDE)
@@ -44,6 +45,8 @@ gof.min       <- 0.05                    # GoF crossover value to change ARMA-GA
 
 #===========================================
 # Call simulator
-#===========================================s
+#===========================================
+OptCVKD = F
+OptCVAG = F
 source("smuf_main-sim.R")
 saveRDS(list(bighlpopgr,bighlpcrps),  file=savfile)
