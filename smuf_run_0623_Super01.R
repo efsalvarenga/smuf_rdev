@@ -13,7 +13,7 @@
 #===========================================
 setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
-savfile = "smuf_run_0623_Super01.rds"
+savfile = "smuf_run_0623_Super01c.rds"
 
 wm01_00       <- readRDS("smuf_import-complete.rds")
 importpar     <- readRDS("smuf_import-parameter.rds")
@@ -29,6 +29,8 @@ data_size     <- importpar[5]
 #cus_list to 1000, stp to 150 (detectcores), hrz_lim larger
 cus_list      <- seq(1,200)
 frontierstp   <- 22                     # Number of demand bins (Stepwise frontier for portfolio optimisation)
+max.gen       <- 300                     # For genetic opt
+waitgen       <- 50                      # For genetic opt
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 win_selec     <- win_size[2]
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
