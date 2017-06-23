@@ -28,7 +28,7 @@ for (h in hrz_lim){
   wl06       <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh,gof.min)
   wv45       <- rowMeans(wl06[[1]])
   sd01       <- as.numeric(fx_sd_mymat(wl06[[3]]))
-  wv46       <- seq(0,frontierstp)^3/frontierstp^3 * sum(wv45)
+  wv46       <- seq(0,frontierstp)^frontierexp/frontierstp^frontierexp * sum(wv45)
   
   #===========================================
   # Random groups & evaluation
