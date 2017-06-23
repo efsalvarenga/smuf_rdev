@@ -377,7 +377,7 @@ fx_int_crossval_vector <- function(wm01_01,wv42,h,in_sample_fr,s01,s02,sum_of_h,
     if (use_arma == T) {
       fcst_mccv   <- fx_fcst_armagarch(wm14cv,armalags,win_size,ahead_t,co_evhor,sampling,cross_overh)
     } else {
-      fcst_mccv   <- fx_fcst_kdss(wm14cv,win_selec,ahead_t,out_evhor,sampling)
+      fcst_mccv   <- fx_fcst_kdss(wm14cv,win_selec,ahead_t,co_evhor,sampling)
       # fcst_mccv   <- list(fx_fcst_kds_quickvector(wm14cv,win_size,co_evhor,sampling,cross_overh)) [bkp]
     }
     wm03fcstcv  <- rbind(fx_fcstgeneric(fcst_mccv,co_evhor,wm13cv))
