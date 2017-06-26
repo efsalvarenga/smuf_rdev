@@ -13,7 +13,7 @@
 #===========================================
 setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
-savfile = "smuf_run_0624_defheurb.rds"
+savfile = "smuf_run_0624_defheurd.rds"
 
 wm01_00       <- readRDS("smuf_import-complete.rds")
 importpar     <- readRDS("smuf_import-parameter.rds")
@@ -28,8 +28,8 @@ data_size     <- importpar[5]
 #===========================================
 #cus_list to 1000, stp to 150 (detectcores), hrz_lim larger (0:167)*113), turn on CV
 cus_list      <- seq(1,50)
-frontierstp   <- 14                     # Number of demand bins (Stepwise frontier for portfolio optimisation)
-frontierexp   <- 2                       # Exponentiality of frontier steps
+frontierstp   <- 12                     # Number of demand bins (Stepwise frontier for portfolio optimisation)
+frontierexp   <- 1.2                       # Exponentiality of frontier steps
 max.gen       <- 300                     # For genetic opt
 waitgen       <- 50                      # For genetic opt
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
@@ -50,6 +50,6 @@ gof.min       <- 0.05                    # GoF crossover value to change ARMA-GA
 # Call simulator
 #===========================================
 OptCVKD = T
-OptCVAG = F
+OptCVAG = T
 source("smuf_main-optgrp.R")
 saveRDS(list(bighlpopgr,bighlpcrps),  file=savfile)
