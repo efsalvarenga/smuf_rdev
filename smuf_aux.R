@@ -27,8 +27,22 @@ ds_len  <- s02*4
 plot1   <- as.data.frame(t(wm01_00[1:cus_no,ds_ini:(ds_ini+ds_len-1)]))
 plot1   <- cbind(seq(1,ds_len),plot1)
 colnames(plot1) <- c("Time",paste("Cus",1:cus_no,sep=""))
-ggplot(plot1, aes(Time,Cus7))+geom_line(color="firebrick") + 
+ggplot(plot1, aes(Time,Cus7)) +
+  geom_line(color="firebrick") + 
   # labs(title="Example of demand pattern for one customer") +
   theme(plot.title = element_text(hjust = 0.5)) +
   labs(x = "Hours (4 weeks)", y = "Energy demand (KWh)")
 
+cus_nos <- c(3,4,8,9)
+sl_win  <- seq(1993:2016)
+plot2   <- as.numeric(wm14[cus_nos,sl_win])
+plot2   <- as.data.frame(plot2)
+plot2   <- cbind(plot2,rep(paste("Cus",cus_nos,sep=""),24))
+colnames(plot2) <- c("Demand","Customer")
+ggplot(plot2, aes(Demand, color=Customer, fill=Customer)) +
+  geom_density(alpha = 0.1)
+
+
+
+
+saveRDS(list(plot1,plot2),file="smuf_aux_plots")
