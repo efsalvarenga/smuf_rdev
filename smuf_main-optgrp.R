@@ -69,7 +69,6 @@ for (h in hrz_lim){
     cat("[OptCVKD] ")
     optgrp_cvkd  <- foreach (i = 1:frontierstp,
                              .packages=c("forecast","rgenoud","foreach"),
-                             # .export=c('fcst_mccv'),    #nao precisa mais??
                              .combine=c("rbind")) %dopar% {
                                opt_min_cusd  = wv46[i]
                                opt_max_cusd  = wv46[i+1]
@@ -93,7 +92,7 @@ for (h in hrz_lim){
     cat("[OptCVAG] ")
     optgrp_cvag  <- foreach (i = 1:frontierstp,
                              .packages=c("forecast","rgenoud","foreach"),
-                             .export=c('fcst_mccv'),
+                             # .export=c('gof.min'),
                              .combine=c("rbind")) %dopar% {
                                opt_min_cusd  = wv46[i]
                                opt_max_cusd  = wv46[i+1]

@@ -362,7 +362,7 @@ fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h
   return(list(wm03fcst,wm05,wm14))
 }
 
-fx_int_crossval_vector <- function(wm01_01,wv42,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh,use_arma){
+fx_int_crossval_vector <- function(wm01_01,wv42,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh,use_arma,gof.min){
   def_evhor     <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,crossvalsize)
   wm01          <- wm01_01[,def_evhor[2]:def_evhor[3]]                      # work matrix
   runvec        <- wv42 %*% wm01 / sum(wv42)
@@ -375,7 +375,7 @@ fx_int_crossval_vector <- function(wm01_01,wv42,h,in_sample_fr,s01,s02,sum_of_h,
     wm13cv      <- rbind(fx_unseas2(runveccv,wl02cv,s02,co_evhor))                         # out-sample estimated trend + seas
     wm14cv      <- wl02cv[[2]]                                                   # in-sample noise
     if (use_arma == T) {
-      fcst_mccv   <- fx_fcst_armagarch(wm14cv,armalags,win_size,ahead_t,co_evhor,sampling,cross_overh)
+      fcst_mccv   <- fx_fcst_armagarch(wm14cv,armalags,win_size,ahead_t,co_evhor,sampling,cross_overh,gof.min)
     } else {
       fcst_mccv   <- fx_fcst_kdss(wm14cv,win_selec,ahead_t,co_evhor,sampling)
       # fcst_mccv   <- list(fx_fcst_kds_quickvector(wm14cv,win_size,co_evhor,sampling,cross_overh)) [bkp]
@@ -403,7 +403,7 @@ fx_rndgrp <- function(wm01,frontierstp){
 
 fx_optgrp_crps <- function (wv42,use_arma){
   if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
-    result <- fx_int_crossval_vector(wm01_01,wv42,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh,use_arma)
+    result <- fx_int_crossval_vector(wm01_01,wv42,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh,use_arma,gof.min)
   } else {result <- 10}
   return (result)
 }
