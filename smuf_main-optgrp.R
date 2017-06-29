@@ -108,14 +108,14 @@ for (h in hrz_lim){
                                grouped
                              }
     bighlpopgr   <- fx_sav_optgrps(c("cvag",h,frontierstp,length(cus_list),crossvalstps,armalags,crossvalfocus,runkey),optgrp_cvag)
-    res_crps_ag  <- fx_applgrp(optgrp_cvag,wv46,wm01_01,fx_int_fcstgeneric_armagarch,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh)
+    res_crps_ag  <- fx_applgrp(optgrp_cvag,wv46,wm01_01,fx_int_fcstgeneric_armagarch,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh,crossvalfocus)
   }
   
   if (OptCVKD == T) {
-    bighlpcrps   <- fx_sav_optress(c("sdev_kd+ag",h,frontierstp,length(cus_list),crossvalstps,armalags,crossvalfocus,runkey),
+    bighlpcrps   <- fx_sav_optress(c("sdev+crps_kd+ag",h,frontierstp,length(cus_list),crossvalstps,armalags,crossvalfocus,runkey),
                                    list(c(h,frontierstp,length(cus_list)),cbind(cr01rnd,wv45rnd),res_sdev_kd,res_sdev_ag,res_crps_kd,res_crps_ag))
   } else {
-    bighlpcrps   <- fx_sav_optress(c("sdev+crps_kd+ag",h,frontierstp,length(cus_list),crossvalstps,armalags,crossvalfocus,runkey),
+    bighlpcrps   <- fx_sav_optress(c("sdev_kd+ag",h,frontierstp,length(cus_list),crossvalstps,armalags,crossvalfocus,runkey),
                                    list(c(h,frontierstp,length(cus_list)),cbind(cr01rnd,wv45rnd),res_sdev_kd,res_sdev_ag))#,res_crps_kd,res_crps_ag))
   }
   saveRDS(list(bighlpopgr,bighlpcrps),  file=savfile)
