@@ -13,7 +13,7 @@
 #===========================================
 setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
-savfile = "smuf_run_0630_defheura.rds"
+savfile = "smuf_run_0630_defheur_23-24a.rds"
 
 wm01_00       <- readRDS("smuf_import-complete.rds")
 importpar     <- readRDS("smuf_import-parameter.rds")
@@ -35,11 +35,11 @@ waitgen       <- 50                      # For genetic opt
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 win_selec     <- win_size[1]
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
-ahead_t       <- seq(1, (2/sum_of_h))    # Up to s02
+ahead_t       <- seq(3, (4/sum_of_h))    # Up to s02
 hrz_lim       <- seq(3,4)*113            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
-crossvalstps  <- 16                      # Steps used for multiple crossvalidation (Only KDE)
+crossvalstps  <- 32                      # Steps used for multiple crossvalidation (Only KDE)
 crossvalfocus <- c(1,2)                  # What period is focused when running crossvalidation
 is_wins_weeks <- 12                      # Number of weeks used for in-sample (KDE uses win_size) & seasonality
 sampling      <- 1024                    # For monte-carlo CRPS calculation

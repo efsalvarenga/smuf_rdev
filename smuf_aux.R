@@ -76,9 +76,13 @@ for (i in c(4,6)) {
   plot3 <- rbind(plot3,temp)
 }
 ggplot3 <- ggplot(plot3, aes(CRPS,uDemand, color=Grouping)) + geom_point() +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_line(colour = "gray90"),
+                     panel.grid.minor = element_line(colour = "gray95"), axis.line = element_line(colour = "gray60")) +
   scale_color_manual(values=c("gray80", "dodgerblue3", "firebrick")) +
-  theme(text=element_text(family="Times",size=14)) +
-  ylab("Mean Demand (in KWh)") +
+  theme(text=element_text(family="Times",size=18)) +
+  scale_y_continuous(name="Mean Demand (in KWh)") +
+  scale_x_continuous(name="Forecast Uncertainty (in average kWh CRPS)",
+                     limits=c(0, 0.1),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
   theme(legend.position=c(0.8,0.7))
 ggplot3
 ggsave(paste(Sys.Date(),plt3nam,sep="_"),path="./Plots")
