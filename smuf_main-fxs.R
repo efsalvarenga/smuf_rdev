@@ -382,7 +382,12 @@ fx_int_crossval_vector <- function(wm01_01,wv42,h,in_sample_fr,s01,s02,sum_of_h,
     }
     wm03fcstcv  <- rbind(fx_fcstgeneric(fcst_mccv,co_evhor,wm13cv))
     wm05cv      <- fx_crpsgeneric(wm03cv,wm13cv,wm14cv,fcst_mccv,co_evhor,sampling)
-    mean(wm05cv[1,crossvalfocus[1]:crossvalfocus[2]])
+    if(length(crossvalfocus)==2){
+      cr01opt       <- mean(wm05cv[1,crossvalfocus[1]:crossvalfocus[2]])
+    } else {
+      cr01opt       <- wm05cv[1,crossvalfocus]
+    }
+    cr01opt
   }
   return(mean(crossval_runs))
 }
@@ -428,7 +433,11 @@ fx_applgrp     <- function(optgrp,wv46,wm01_01,fx_to_use,h,in_sample_fr,s01,s02,
   wl06opt       <- fx_to_use(wm01_grp,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,T,armalags,cross_overh,gof.min)
   wv45opt       <- as.numeric(rowMeans(wl06opt[[1]]) * rowSums(wm01_grpl[[2]]))
   sd01opt       <- as.numeric(fx_sd_mymat(wl06opt[[1]]))
-  cr01opt       <- rowMeans(wl06opt[[2]][,crossvalfocus[1]:crossvalfocus[2]])
+  if(length(crossvalfocus)==2){
+    cr01opt       <- rowMeans(wl06opt[[2]][,crossvalfocus[1]:crossvalfocus[2]])
+  } else {
+    cr01opt       <- wl06opt[[2]][,crossvalfocus]
+  }
   # cr02optsdev <- foreach (i = 1:frontierstp,
   #                         .packages=c("forecast","rgenoud","foreach"),
   #                         .combine=c("cbind")) %dopar% {

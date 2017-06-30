@@ -11,7 +11,7 @@
 #===========================================
 # Initialising
 #===========================================
-setwd("~/GitRepos/smuf_rdev")
+# setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
 savfile = "smuf_run_0630_sd02_big.rds"
 

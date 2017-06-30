@@ -11,7 +11,7 @@
 #===========================================
 # Initialising
 #===========================================
-setwd("~/GitRepos/smuf_rdev")
+# setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
 savfile = "smuf_run_0630_defheur_03-04a.rds"
 
@@ -35,12 +35,12 @@ waitgen       <- 50                      # For genetic opt
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 win_selec     <- win_size[1]
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
-ahead_t       <- seq(3, (4/sum_of_h))    # Up to s02
+ahead_t       <- seq(1, (24/sum_of_h))    # Up to s02
 hrz_lim       <- seq(3,4)*113            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 crossvalstps  <- 32                      # Steps used for multiple crossvalidation (Only KDE)
-crossvalfocus <- c(1,2)                  # What period is focused when running crossvalidation
+crossvalfocus <- c(4)                  # What period is focused when running crossvalidation
 is_wins_weeks <- 12                      # Number of weeks used for in-sample (KDE uses win_size) & seasonality
 sampling      <- 1024                    # For monte-carlo CRPS calculation
 armalags      <- c(3,3)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)

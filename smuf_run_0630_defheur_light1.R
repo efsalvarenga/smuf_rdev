@@ -13,7 +13,7 @@
 #===========================================
 # setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
-savfile = "smuf_run_0630_defheur_23-24a.rds"
+savfile = "smuf_run_0630_defheur_03-04_light1.rds"
 
 wm01_00       <- readRDS("smuf_import-complete.rds")
 importpar     <- readRDS("smuf_import-parameter.rds")
@@ -27,20 +27,20 @@ data_size     <- importpar[5]
 # Integrated Parameters
 #===========================================
 #cus_list to 1000, stp to 150 (detectcores), hrz_lim larger (0:167)*113), turn on CV
-cus_list      <- seq(1,150)
-frontierstp   <- stepwiseHPC             # Number of demand bins (Stepwise frontier for portfolio optimisation)
+cus_list      <- seq(1,20)
+frontierstp   <- 40             # Number of demand bins (Stepwise frontier for portfolio optimisation)
 frontierexp   <- 1.2                     # Exponentiality of frontier steps
 max.gen       <- 300                     # For genetic opt
 waitgen       <- 50                      # For genetic opt
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 win_selec     <- win_size[1]
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
-ahead_t       <- seq(1, (24/sum_of_h))    # Up to s02
-hrz_lim       <- seq(3,4)*113            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
+ahead_t       <- seq(1, (6/sum_of_h))    # Up to s02
+hrz_lim       <- 0 #seq(3,4)*113            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
-crossvalstps  <- 32                      # Steps used for multiple crossvalidation (Only KDE)
-crossvalfocus <- c(24)                  # What period is focused when running crossvalidation
+crossvalstps  <- 8                      # Steps used for multiple crossvalidation (Only KDE)
+crossvalfocus <- c(1)                  # What period is focused when running crossvalidation
 is_wins_weeks <- 12                      # Number of weeks used for in-sample (KDE uses win_size) & seasonality
 sampling      <- 1024                    # For monte-carlo CRPS calculation
 armalags      <- c(3,3)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)
