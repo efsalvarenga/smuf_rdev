@@ -33,17 +33,17 @@ data_size     <- importpar[5]
 cus_list      <- seq(1,1000)
 # frontierstp   <- 5                     # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
-win_selec     <- win_size[1]
+win_selec     <- win_size[2]
 # cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
-ahead_t       <- seq(1, (60/sum_of_h))   # Up to s02
-hrz_lim       <- seq(20,60)*113            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
+ahead_t       <- seq(1)#, (60/sum_of_h))   # Up to s02
+hrz_lim       <- seq(20,50)*113            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 # crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 # crossvalstps  <- 2                       # Steps used for multiple crossvalidation (Only KDE)
 is_wins_weeks <- 12                      # Number of weeks used for in-sample (KDE uses win_size) & seasonality
 sampling      <- 1024                    # For monte-carlo CRPS calculation
 armalags      <- c(3,3)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)
-gof.min       <- 0.05                    # GoF crossover value to change ARMA-GARCH to KDS
+gof.min       <- 0.1                    # GoF crossover value to change ARMA-GARCH to KDS
 
 #===========================================
 # BIG [h] LOOP Start
