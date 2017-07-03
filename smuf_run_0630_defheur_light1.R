@@ -28,7 +28,7 @@ data_size     <- importpar[5]
 #===========================================
 #cus_list to 1000, stp to 150 (detectcores), hrz_lim larger (0:167)*113), turn on CV
 cus_list      <- seq(1,20)
-frontierstp   <- 40             # Number of demand bins (Stepwise frontier for portfolio optimisation)
+frontierstp   <- 8             # Number of demand bins (Stepwise frontier for portfolio optimisation)
 frontierexp   <- 1.2                     # Exponentiality of frontier steps
 max.gen       <- 300                     # For genetic opt
 waitgen       <- 50                      # For genetic opt
