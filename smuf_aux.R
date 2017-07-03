@@ -30,23 +30,23 @@ colnames(plot1) <- c("Time",paste("Cus",1:cus_no,sep=""))
 ggplot1a <- ggplot(plot1, aes(Time,Cus2)) +
   geom_line(color="firebrick") + 
   theme(plot.title = element_text(hjust = 0.5)) +
-  labs(x = "Hours (4 weeks)", y = "Energy demand (KWh)") +
-  theme(text=element_text(family="Times"))
+  labs(x = "Hours (4 weeks)", y = "Demand (KWh)") +
+  theme(text=element_text(family="Times",size=18))
 ggplot1b <- ggplot(plot1, aes(Time,Cus4)) +
   geom_line(color="firebrick") + 
   theme(plot.title = element_text(hjust = 0.5)) +
-  labs(x = "Hours (4 weeks)", y = "Energy demand (KWh)") +
-  theme(text=element_text(family="Times"))
+  labs(x = "Hours (4 weeks)", y = "Demand (KWh)") +
+  theme(text=element_text(family="Times",size=18))
 ggplot1c <- ggplot(plot1, aes(Time,Cus5)) +
   geom_line(color="firebrick") + 
   theme(plot.title = element_text(hjust = 0.5)) +
-  labs(x = "Hours (4 weeks)", y = "Energy demand (KWh)") +
-  theme(text=element_text(family="Times"))
+  labs(x = "Hours (4 weeks)", y = "Demand (KWh)") +
+  theme(text=element_text(family="Times",size=18))
 ggplot1d <- ggplot(plot1, aes(Time,Cus6)) +
   geom_line(color="firebrick") + 
   theme(plot.title = element_text(hjust = 0.5)) +
-  labs(x = "Hours (4 weeks)", y = "Energy demand (KWh)") +
-  theme(text=element_text(family="Times"))
+  labs(x = "Hours (4 weeks)", y = "Demand (KWh)") +
+  theme(text=element_text(family="Times",size=18))
 multiplot(ggplot1a, ggplot1d, ggplot1c, ggplot1b, cols=2)
 # ggsave(paste(Sys.Date(),plt1nam,sep="_"),path="./Plots")
 
@@ -59,7 +59,8 @@ plot2   <- cbind(plot2,rep(paste("Cus",cus_nos,sep=""),24))
 colnames(plot2) <- c("Demand","Customer")
 ggplot2 <- ggplot(plot2, aes(Demand, color=Customer, fill=Customer)) +
             geom_density(alpha = 0.1) +
-            theme(text=element_text(family="Times"))
+            theme(text=element_text(family="Times",size=18)) +
+            theme(legend.position=c(0.8,0.7))
 ggplot2
 # ggsave(paste(Sys.Date(),plt2nam,sep="_"),path="./Plots")
 
