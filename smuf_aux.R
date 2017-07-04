@@ -88,5 +88,32 @@ ggplot3 <- ggplot(plot3, aes(CRPS,uDemand, color=Grouping)) + geom_point() +
 ggplot3
 ggsave(paste(Sys.Date(),plt3nam,sep="_"),path="./Plots")
 
+
+plt4nam <- "benchKDxAG.pdf"
+plot4i  <- readRDS("smuf_temp_compare.rds")
+# myleg   <- c("Random","SDKD","SDAG","CVKD","CVAG")
+# fx_plt_rnd_vs_opt(plot3i[[2]][[length(plot3i[[2]])]][[2]],c(0,0.15),c(0,15),myleg,"CRPS")
+# plot3   <- cbind(as.data.frame(plot3i[[2]][[1]][[2]][[2]]),myleg[1])
+# colnames(plot3) <- c("CRPS","uDemand","Grouping")
+# niceleg <- c("Optimal (st. dev.)","","Optimal (cross-val.)")
+# for (i in c(4,6)) {
+#   temp  <- cbind(as.data.frame(plot3i[[2]][[1]][[2]][[i]]),niceleg[(i-3)])
+#   colnames(temp) <- c("CRPS","uDemand","Grouping")
+#   plot3 <- rbind(plot3,temp)
+# }
+# ggplot3 <- ggplot(plot3, aes(CRPS,uDemand, color=Grouping)) + geom_point() +
+#   theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_line(colour = "gray90"),
+#                      panel.grid.minor = element_line(colour = "gray95"), axis.line = element_line(colour = "gray60")) +
+#   scale_color_manual(values=c("gray80", "dodgerblue3", "firebrick")) +
+#   theme(text=element_text(family="Times",size=18)) +
+#   scale_y_continuous(name="Mean Demand (in KWh)") +
+#   scale_x_continuous(name="Forecast Uncertainty (in average kWh CRPS)",
+#                      limits=c(0, 0.1),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
+#   theme(legend.position=c(0.8,0.7))
+# ggplot3
+# ggsave(paste(Sys.Date(),plt3nam,sep="_"),path="./Plots")
+
+
+
 #===========================================
 saveRDS(list(plot1,plot2,plot3),file="smuf_aux_plots.rds")
