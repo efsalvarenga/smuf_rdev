@@ -43,7 +43,7 @@ in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sampl
 is_wins_weeks <- 12                      # Number of weeks used for in-sample (KDE uses win_size) & seasonality
 sampling      <- 1024                    # For monte-carlo CRPS calculation
 armalags      <- c(3,3)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)
-gof.min       <- 0.1                    # GoF crossover value to change ARMA-GARCH to KDS
+gof.min       <- 0.2                    # GoF crossover value to change ARMA-GARCH to KDS
 
 #===========================================
 # BIG [h] LOOP Start
