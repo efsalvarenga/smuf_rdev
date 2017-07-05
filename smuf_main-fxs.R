@@ -230,6 +230,55 @@ fx_fcst_armagarch <- function (wm14,armalags,win_selec,ahead_t,out_evhor,samplin
   return(fcst_armagarch)
 }
 
+fx_fcst_armagarchs <- function (wm14,armalags,win_selec,ahead_t,out_evhor,sampling,cross_overh,gof.min){
+  fcst_armagarch <- foreach (j = 1:nrow(wm14), .packages=c("rugarch","doParallel"), .export='fx_fcst_kdss') %dopar% {
+    runvec       <- wm14[j,]
+    autotest     <- auto.arima(runvec,d=0,D=0,max.p=armalags[1],max.q=armalags[2],ic='bic')
+    autorder     <- arimaorder(autotest)
+    autorder[1]
+    autorder[2]
+    
+
+
+    if (nrow(final.ord)==0) {             # if no ARMA(p,q) fits, go with kde_quickvector
+      simdata <- fx_fcst_kdss(rbind(runvec),win_selec,ahead_t,out_evhor,sampling)[[1]]
+      print("foi kd1")
+    } else {                              # fitting ARMA-GARCH parameters and simulating
+      fit        = F
+      final.ordl = 0
+      while (!is.logical(fit) == F) {
+        spec = ugarchspec(variance.model=list(garchOrder=c(1,1)),
+                          mean.model=list(armaOrder=c(final.ord[(final.ordl+1),1], final.ord[(final.ordl+1),2]), include.mean=T),
+                          distribution.model="sged")
+        fit = tryCatch(ugarchfit(spec, runvec, solver = 'hybrid'),
+                       error=function(err) FALSE, warning=function(err) FALSE)
+        if((final.ordl+1) < nrow(final.ord)) {
+          final.ordl = final.ordl+1
+        } else {
+          break
+        }
+      }
+      if (!is.logical(fit) == F) {
+        simdata <- fx_fcst_kdss(rbind(runvec),win_selec,ahead_t,out_evhor,sampling)[[1]]
+        print("foi kdb")
+      } else {
+        if (gof(fit, groups=c(2016))[3] >= gof.min) {
+          sim1    <- ugarchsim(fit, n.sim = max(ahead_t), m.sim = sampling)
+          simdata <- list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
+          print("foi ag")
+        } else {
+          simdata <- fx_fcst_kdss(rbind(runvec),win_selec,ahead_t,out_evhor,sampling)[[1]]
+          # simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh) [bkp]
+          print("foi kd2")
+        }
+      }
+    }
+    simdata
+  }
+  return(fcst_armagarch)
+}
+
+
 # fx_fcst_wm <- function(fcst_mc,cvcojmean,out_evhor,wm02){
 #   fcst_co <- foreach (j = 1:nrow(wm02),.combine=c("rbind")) %dopar% {
 #     wv36f <- matrix(ncol=out_evhor[5])
