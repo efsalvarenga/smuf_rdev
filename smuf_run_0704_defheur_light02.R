@@ -13,7 +13,7 @@
 #===========================================
 # setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
-savfile = "smuf_run_0704_defheur_light04.rds"
+savfile = "smuf_run_0704_defheur_light02.rds"
 
 wm01_00       <- readRDS("smuf_import-complete.rds")
 importpar     <- readRDS("smuf_import-parameter.rds")
