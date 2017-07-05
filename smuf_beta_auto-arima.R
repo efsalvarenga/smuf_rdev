@@ -1,5 +1,6 @@
 # smuf_beta_auto.arima
 
+closeAllConnections()
 setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
 wm01_00       <- readRDS("smuf_import-complete.rds")
@@ -23,6 +24,7 @@ cus_list      <- seq(1,100)
 # win_selec     <- win_size[1]
 # cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1, (2/sum_of_h))    # Up to s02
+h             <- 0
 hrz_lim       <- seq(5,6)*113            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 # crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
@@ -34,3 +36,42 @@ armalags      <- c(3,3)                  # Max lags for ARIMA fit in ARMA-GARCH 
 gof.min       <- 0.05                    # GoF crossover value to change ARMA-GARCH to KDS
 
 wm01_01    <- wm01_00[min(cus_list):max(cus_list),]
+
+out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
+wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                         # work matrix
+wl02       <- fx_seas2(wm01,s01,s02,sum_of_h,out_evhor)                   # in-sample seasonality pattern (s,r,t)
+wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                        # out-sample original load data
+wm13       <- fx_unseas2(wm01,wl02,s02,out_evhor)                         # out-sample estimated trend + seas
+wm14       <- wl02[[2]]                                                   # in-sample noise
+
+ptm    <- proc.time()
+efsa_armalags  <- foreach (j = 1:nrow(wm14), .packages=c("rugarch","doParallel"), .combine='rbind') %dopar% {
+  runvec       <- wm14[j,]
+  # Defining ARMA lags
+  final.bic <- matrix(nrow=0,ncol=4)
+  for (p in 0:armalags[1]) for (q in 0:armalags[2]) {
+    if ( p == 0 && q == 0) {
+      next
+    }
+    arimaFit = tryCatch(arima(runvec, order=c(p, 0, q)),
+                        error=function(err) FALSE,
+                        warning=function( err ) FALSE )
+    if( !is.logical(arimaFit) ) {
+      final.bic <- rbind(final.bic,c(p,q,BIC(arimaFit),AIC(arimaFit)))
+    } else {
+      next
+    }
+  }
+  final.ord <- final.bic[sort.list(final.bic[,3]), ]
+  c(final.ord[1,1],0,final.ord[1,2:3])
+}
+print(proc.time() - ptm)
+
+ptm    <- proc.time()
+auto_armalags  <- foreach (j = 1:nrow(wm14), .packages=c("rugarch","doParallel"), .combine='rbind') %dopar% {
+  runvec       <- wm14[j,]
+  autotest     <- auto.arima(runvec,d=0,D=0,max.p=armalags[1],max.q=armalags[2],ic='bic')
+  c(arimaorder(autotest),autotest$bic)
+}
+print(proc.time() - ptm)
+
