@@ -172,112 +172,89 @@ fx_fcst_kdss <- function (wm14,win_selec,ahead_t,out_evhor,sampling){
 # }
 # Disabled 11/jun/17
 
-fx_fcst_armagarch <- function (wm14,armalags,win_selec,ahead_t,out_evhor,sampling,cross_overh,gof.min){
-  fcst_armagarch <- foreach (j = 1:nrow(wm14), .packages=c("rugarch","doParallel"), .export='fx_fcst_kdss') %dopar% {
-    runvec       <- wm14[j,]
-    # Defining ARMA lags
-    final.bic <- matrix(nrow=0,ncol=4)
-    for (p in 0:armalags[1]) for (q in 0:armalags[2]) {
-      if ( p == 0 && q == 0) {
-        next
-      }
-      arimaFit = tryCatch(arima(runvec, order=c(p, 0, q)),
-                          error=function(err) FALSE,
-                          warning=function( err ) FALSE )
-      if( !is.logical(arimaFit) ) {
-        final.bic <- rbind(final.bic,c(p,q,AIC(arimaFit,k=log(out_evhor[7])),AIC(arimaFit)))
-      } else {
-        next
-      }
-    }
-    final.ord <- final.bic[sort.list(final.bic[,3]), ]
-    if (nrow(final.ord)==0) {             # if no ARMA(p,q) fits, go with kde_quickvector
-      simdata <- fx_fcst_kdss(rbind(runvec),win_selec,ahead_t,out_evhor,sampling)[[1]]
-      # simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh) [bkp]
-      print("foi kd1")
-    } else {                              # fitting ARMA-GARCH parameters and simulating
-      fit        = F
-      final.ordl = 0
-      while (!is.logical(fit) == F) {
-        spec = ugarchspec(variance.model=list(garchOrder=c(1,1)),
-                          mean.model=list(armaOrder=c(final.ord[(final.ordl+1),1], final.ord[(final.ordl+1),2]), include.mean=T),
-                          distribution.model="sged")
-        fit = tryCatch(ugarchfit(spec, runvec, solver = 'hybrid'),
-                       error=function(err) FALSE, warning=function(err) FALSE)
-        if((final.ordl+1) < nrow(final.ord)) {
-          final.ordl = final.ordl+1
-        } else {
-          break
-        }
-      }
-      if (!is.logical(fit) == F) {
-        simdata <- fx_fcst_kdss(rbind(runvec),win_selec,ahead_t,out_evhor,sampling)[[1]]
-        print("foi kdb")
-      } else {
-        if (gof(fit, groups=c(2016))[3] >= gof.min) {
-          sim1    <- ugarchsim(fit, n.sim = max(ahead_t), m.sim = sampling)
-          simdata <- list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
-          print("foi ag")
-        } else {
-          simdata <- fx_fcst_kdss(rbind(runvec),win_selec,ahead_t,out_evhor,sampling)[[1]]
-          # simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh) [bkp]
-          print("foi kd2")
-        }
-      }
-    }
-    simdata
-  }
-  return(fcst_armagarch)
-}
+# fx_fcst_armagarch <- function (wm14,armalags,win_selec,ahead_t,out_evhor,sampling,cross_overh,gof.min){
+#   fcst_armagarch <- foreach (j = 1:nrow(wm14), .packages=c("rugarch","doParallel"), .export='fx_fcst_kdss') %dopar% {
+#     runvec       <- wm14[j,]
+#     # Defining ARMA lags
+#     final.bic <- matrix(nrow=0,ncol=4)
+#     for (p in 0:armalags[1]) for (q in 0:armalags[2]) {
+#       if ( p == 0 && q == 0) {
+#         next
+#       }
+#       arimaFit = tryCatch(arima(runvec, order=c(p, 0, q)),
+#                           error=function(err) FALSE,
+#                           warning=function( err ) FALSE )
+#       if( !is.logical(arimaFit) ) {
+#         final.bic <- rbind(final.bic,c(p,q,AIC(arimaFit,k=log(out_evhor[7])),AIC(arimaFit)))
+#       } else {
+#         next
+#       }
+#     }
+#     final.ord <- final.bic[sort.list(final.bic[,3]), ]
+#     if (nrow(final.ord)==0) {             # if no ARMA(p,q) fits, go with kde_quickvector
+#       simdata <- fx_fcst_kdss(rbind(runvec),win_selec,ahead_t,out_evhor,sampling)[[1]]
+#       # simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh) [bkp]
+#       print("foi kd1")
+#     } else {                              # fitting ARMA-GARCH parameters and simulating
+#       fit        = F
+#       final.ordl = 0
+#       while (!is.logical(fit) == F) {
+#         spec = ugarchspec(variance.model=list(garchOrder=c(1,1)),
+#                           mean.model=list(armaOrder=c(final.ord[(final.ordl+1),1], final.ord[(final.ordl+1),2]), include.mean=T),
+#                           distribution.model="sged")
+#         fit = tryCatch(ugarchfit(spec, runvec, solver = 'hybrid'),
+#                        error=function(err) FALSE, warning=function(err) FALSE)
+#         if((final.ordl+1) < nrow(final.ord)) {
+#           final.ordl = final.ordl+1
+#         } else {
+#           break
+#         }
+#       }
+#       if (!is.logical(fit) == F) {
+#         simdata <- fx_fcst_kdss(rbind(runvec),win_selec,ahead_t,out_evhor,sampling)[[1]]
+#         print("foi kdb")
+#       } else {
+#         if (gof(fit, groups=c(2016))[3] >= gof.min) {
+#           sim1    <- ugarchsim(fit, n.sim = max(ahead_t), m.sim = sampling)
+#           simdata <- list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
+#           print("foi ag")
+#         } else {
+#           simdata <- fx_fcst_kdss(rbind(runvec),win_selec,ahead_t,out_evhor,sampling)[[1]]
+#           # simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh) [bkp]
+#           print("foi kd2")
+#         }
+#       }
+#     }
+#     simdata
+#   }
+#   return(fcst_armagarch)
+# }
+# Disabled 05/jul/17
 
 fx_fcst_armagarchs <- function (wm14,armalags,win_selec,ahead_t,out_evhor,sampling,cross_overh,gof.min){
   fcst_armagarch <- foreach (j = 1:nrow(wm14), .packages=c("rugarch","doParallel"), .export='fx_fcst_kdss') %dopar% {
     runvec       <- wm14[j,]
     autotest     <- auto.arima(runvec,d=0,D=0,max.p=armalags[1],max.q=armalags[2],ic='bic')
     autorder     <- arimaorder(autotest)
-    autorder[1]
-    autorder[2]
-    
-
-
-    if (nrow(final.ord)==0) {             # if no ARMA(p,q) fits, go with kde_quickvector
+    spec         <- ugarchspec(variance.model=list(garchOrder=c(1,1)),
+                      mean.model=list(armaOrder=c(autorder[1], autorder[3]), include.mean=T),
+                      distribution.model="sged")
+    fit = tryCatch(ugarchfit(spec, runvec, solver = 'hybrid'),
+                   error=function(err) FALSE, warning=function(err) FALSE)
+    gof = tryCatch(gof(fit, groups=c(2016))[3] >= gof.min,
+                   error=function(err) FALSE)
+    if (!is.logical(fit) == T & gof== T) {
+      sim1    <- ugarchsim(fit, n.sim = max(ahead_t), m.sim = sampling)
+      simdata <- list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
+      print("foi AG")
+    } else {
       simdata <- fx_fcst_kdss(rbind(runvec),win_selec,ahead_t,out_evhor,sampling)[[1]]
-      print("foi kd1")
-    } else {                              # fitting ARMA-GARCH parameters and simulating
-      fit        = F
-      final.ordl = 0
-      while (!is.logical(fit) == F) {
-        spec = ugarchspec(variance.model=list(garchOrder=c(1,1)),
-                          mean.model=list(armaOrder=c(final.ord[(final.ordl+1),1], final.ord[(final.ordl+1),2]), include.mean=T),
-                          distribution.model="sged")
-        fit = tryCatch(ugarchfit(spec, runvec, solver = 'hybrid'),
-                       error=function(err) FALSE, warning=function(err) FALSE)
-        if((final.ordl+1) < nrow(final.ord)) {
-          final.ordl = final.ordl+1
-        } else {
-          break
-        }
-      }
-      if (!is.logical(fit) == F) {
-        simdata <- fx_fcst_kdss(rbind(runvec),win_selec,ahead_t,out_evhor,sampling)[[1]]
-        print("foi kdb")
-      } else {
-        if (gof(fit, groups=c(2016))[3] >= gof.min) {
-          sim1    <- ugarchsim(fit, n.sim = max(ahead_t), m.sim = sampling)
-          simdata <- list(sim1@simulation$seriesSim,sim1@simulation$sigmaSim)
-          print("foi ag")
-        } else {
-          simdata <- fx_fcst_kdss(rbind(runvec),win_selec,ahead_t,out_evhor,sampling)[[1]]
-          # simdata <- fx_fcst_kds_quickvector(runvec,win_size,out_evhor,sampling,cross_overh) [bkp]
-          print("foi kd2")
-        }
-      }
+      print("foi KD")
     }
     simdata
   }
   return(fcst_armagarch)
 }
-
 
 # fx_fcst_wm <- function(fcst_mc,cvcojmean,out_evhor,wm02){
 #   fcst_co <- foreach (j = 1:nrow(wm02),.combine=c("rbind")) %dopar% {
@@ -405,7 +382,7 @@ fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h
   wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                        # out-sample original load data
   wm13       <- fx_unseas2(wm01,wl02,s02,out_evhor)                         # out-sample estimated trend + seas
   wm14       <- wl02[[2]]                                                   # in-sample noise
-  fcst_mc    <- fx_fcst_armagarch(wm14,armalags,win_selec,ahead_t,out_evhor,sampling,cross_overh,gof.min) # returns list with next ahead_t fcst and sd
+  fcst_mc    <- fx_fcst_armagarchs(wm14,armalags,win_selec,ahead_t,out_evhor,sampling,cross_overh,gof.min) # returns list with next ahead_t fcst and sd
   wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm13)
   wm05       <- fx_crpsgeneric(wm03,wm13,wm14,fcst_mc,out_evhor,sampling)
   return(list(wm03fcst,wm05,wm14))
@@ -424,7 +401,7 @@ fx_int_crossval_vector <- function(wm01_01,wv42,h,in_sample_fr,s01,s02,sum_of_h,
     wm13cv      <- rbind(fx_unseas2(runveccv,wl02cv,s02,co_evhor))                         # out-sample estimated trend + seas
     wm14cv      <- wl02cv[[2]]                                                   # in-sample noise
     if (use_arma == T) {
-      fcst_mccv   <- fx_fcst_armagarch(wm14cv,armalags,win_size,ahead_t,co_evhor,sampling,cross_overh,gof.min)
+      fcst_mccv   <- fx_fcst_armagarchs(wm14cv,armalags,win_size,ahead_t,co_evhor,sampling,cross_overh,gof.min)
     } else {
       fcst_mccv   <- fx_fcst_kdss(wm14cv,win_selec,ahead_t,co_evhor,sampling)
       # fcst_mccv   <- list(fx_fcst_kds_quickvector(wm14cv,win_size,co_evhor,sampling,cross_overh)) [bkp]
