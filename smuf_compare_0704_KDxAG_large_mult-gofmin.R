@@ -30,7 +30,7 @@ data_size     <- importpar[5]
 # Integrated Parameters
 #===========================================
 # change for superun: cus 1000, hrz_lim steps, gof steps, arma-lags 10
-cus_list      <- seq(1,300)
+cus_list      <- seq(1,500)
 # frontierstp   <- 5                     # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 win_selec     <- win_size[2]
@@ -49,30 +49,45 @@ gof.min       <- 0.1                    # GoF crossover value to change ARMA-GAR
 # BIG [h] LOOP Start
 #===========================================
 resmat.h  <- matrix(nrow=0,ncol=max(ahead_t))
-reslis.h  <- rep(list(resmat.h),6)
+reslis.h  <- rep(list(resmat.h),9)
 wm01_01    <- wm01_00[min(cus_list):max(cus_list),]
 for (h in hrz_lim){
   ptm <- proc.time()                  # Reset clock
   cat("\n\nStep",match(h,hrz_lim), "of",length(hrz_lim),"| Running BIG [h] LOOP with h =",h,"\n")
+  cat("KD")
   wl06kdWS1  <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size[1],is_wins_weeks,crossvalsize,T,armalags,cross_overh,gof.min)
   wl06kdWS2  <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size[2],is_wins_weeks,crossvalsize,T,armalags,cross_overh,gof.min)
+  cat(" AG0.20")
   wl06ag0.20 <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,T,armalags,cross_overh,0.2)
+  cat(" AG0.05")
   wl06ag0.05 <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,T,armalags,cross_overh,0.05)
+  cat(" AG0.01")
   wl06ag0.01 <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,T,armalags,cross_overh,0.01)
+  cat(" AG0.00")
   wl06ag0.00 <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,T,armalags,cross_overh,0)
+  cat(" AG2.00")
+  wl06ag2.00 <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,T,armalags,cross_overh,2)
+  cat(" AG1.00")
+  wl06ag1.00 <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,T,armalags,cross_overh,1)
+  cat(" AG0.50")
+  wl06ag0.50 <- fx_int_fcstgeneric_armagarch(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,T,armalags,cross_overh,0.5)
+  cat(" [Consolidating]\n")
   reslis.h[[1]] <- rbind(reslis.h[[1]],colMeans(wl06kdWS1[[2]],na.rm=T))
   reslis.h[[2]] <- rbind(reslis.h[[2]],colMeans(wl06kdWS2[[2]],na.rm=T))
   reslis.h[[3]] <- rbind(reslis.h[[3]],colMeans(wl06ag0.20[[2]],na.rm=T))
   reslis.h[[4]] <- rbind(reslis.h[[4]],colMeans(wl06ag0.05[[2]],na.rm=T))
   reslis.h[[5]] <- rbind(reslis.h[[5]],colMeans(wl06ag0.01[[2]],na.rm=T))
   reslis.h[[6]] <- rbind(reslis.h[[6]],colMeans(wl06ag0.00[[2]],na.rm=T))
+  reslis.h[[7]] <- rbind(reslis.h[[7]],colMeans(wl06ag0.50[[2]],na.rm=T))
+  reslis.h[[8]] <- rbind(reslis.h[[8]],colMeans(wl06ag1.00[[2]],na.rm=T))
+  reslis.h[[9]] <- rbind(reslis.h[[9]],colMeans(wl06ag2.00[[2]],na.rm=T))
   resmat.h  <- matrix(nrow=0,ncol=max(ahead_t))
   for (k in 1:length(reslis.h)){
     resmat.h <- rbind(resmat.h,colMeans(reslis.h[[k]],na.rm=T))
   }
-  rownames(resmat.h) <- c(paste("KD",1:2),"AG0.20","AG0.05","AG0.01","AG0.00")
+  rownames(resmat.h) <- c(paste("KD",1:2),"AG0.2","AG0.05","AG0.01","AG0","AG0.5","AG1","AG2")
   plt.names <- rownames(resmat.h)
-  fx_plt_mymat(resmat.h,c(0.05,0.15))
+  fx_plt_mymat(resmat.h,c(0.08,0.12))
   legend('topright', inset=c(0,0), legend = plt.names,
          lty=1, col=rainbow(length(plt.names)), bty='n', cex=.75, title="Method")
   print(proc.time() - ptm)
