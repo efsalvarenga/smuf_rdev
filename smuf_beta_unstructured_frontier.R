@@ -11,7 +11,7 @@ max.gen       <- 800                     # For genetic opt
 waitgen       <- 500                      # For genetic opt
 
 optuf <- genoud(fx_optgrp_sdev, nvars=nrow(wm01_01), max.generations=max.gen, wait.generations=waitgen,
-                starting.values=c(rep(1,nrow(wm01_01))), Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
+                starting.values=c(rep(0,nrow(wm01_01))), Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
                 data.type.int=TRUE,  int.seed=1,
                 print.level=1)
 
