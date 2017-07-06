@@ -421,6 +421,7 @@ fx_int_crossval_vector <- function(wm01_01,wv42,h,in_sample_fr,s01,s02,sum_of_h,
 #===========================================
 # Functions Declarations: Optimisation
 #===========================================
+#2do: change parallel chain
 fx_rndgrp <- function(wm01,frontierstp){
   rndgrp <- foreach (i = 1:frontierstp, .combine=c("rbind")) %:%
     foreach (j = 1:nrow(wm01), .combine=c("rbind")) %dopar%{
