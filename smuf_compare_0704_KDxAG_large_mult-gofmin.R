@@ -87,7 +87,7 @@ for (h in hrz_lim){
   }
   rownames(resmat.h) <- c(paste("KD",1:2),"AG0.2","AG0.05","AG0.01","AG0","AG0.5","AG1","AG2")
   plt.names <- rownames(resmat.h)
-  fx_plt_mymat(resmat.h,c(0.08,0.12))
+  fx_plt_mymat(resmat.h,c(0.09,0.11))
   legend('topright', inset=c(0,0), legend = plt.names,
          lty=1, col=rainbow(length(plt.names)), bty='n', cex=.75, title="Method")
   print(proc.time() - ptm)
