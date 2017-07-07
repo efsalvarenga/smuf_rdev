@@ -13,7 +13,7 @@
 #===========================================
 # setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
-savfile = "smuf_run_0704_defheur_light02.rds"
+savfile = "smuf_run_0704_defheur_light01.rds"
 
 wm01_00       <- readRDS("smuf_import-complete.rds")
 importpar     <- readRDS("smuf_import-parameter.rds")
@@ -40,11 +40,11 @@ hrz_lim       <- 0 #seq(3,4)*113            # Rolling forecasts steps {seq(0:167
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 crossvalstps  <- 8                      # Steps used for multiple crossvalidation (Only KDE)
-crossvalfocus <- c(2)                  # What period is focused when running crossvalidation
+crossvalfocus <- c(1)                  # What period is focused when running crossvalidation
 is_wins_weeks <- 12                      # Number of weeks used for in-sample (KDE uses win_size) & seasonality
 sampling      <- 1024                    # For monte-carlo CRPS calculation
-armalags      <- c(3,3)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)
-gof.min       <- 0.05                    # GoF crossover value to change ARMA-GARCH to KDS
+armalags      <- c(5,5)                  # Max lags for ARIMA fit in ARMA-GARCH model (use smuf_lags.R)
+gof.min       <- 0.2                    # GoF crossover value to change ARMA-GARCH to KDS
 
 #===========================================
 # Call simulator
