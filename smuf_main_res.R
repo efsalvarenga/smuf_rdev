@@ -8,6 +8,7 @@
 # smuf_aux create plots for paper
 #===========================================
 library(ggplot2)
+library(reshape)
 
 setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
@@ -90,28 +91,21 @@ ggsave(paste(Sys.Date(),plt3nam,sep="_"),path="./Plots")
 
 
 plt4nam <- "benchKDxAG.pdf"
-plot4i  <- readRDS("smuf_temp_compare.rds")
-# myleg   <- c("Random","SDKD","SDAG","CVKD","CVAG")
-# fx_plt_rnd_vs_opt(plot3i[[2]][[length(plot3i[[2]])]][[2]],c(0,0.15),c(0,15),myleg,"CRPS")
-# plot3   <- cbind(as.data.frame(plot3i[[2]][[1]][[2]][[2]]),myleg[1])
-# colnames(plot3) <- c("CRPS","uDemand","Grouping")
-# niceleg <- c("Optimal (st. dev.)","","Optimal (cross-val.)")
-# for (i in c(4,6)) {
-#   temp  <- cbind(as.data.frame(plot3i[[2]][[1]][[2]][[i]]),niceleg[(i-3)])
-#   colnames(temp) <- c("CRPS","uDemand","Grouping")
-#   plot3 <- rbind(plot3,temp)
-# }
-# ggplot3 <- ggplot(plot3, aes(CRPS,uDemand, color=Grouping)) + geom_point() +
-#   theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_line(colour = "gray90"),
-#                      panel.grid.minor = element_line(colour = "gray95"), axis.line = element_line(colour = "gray60")) +
-#   scale_color_manual(values=c("gray80", "dodgerblue3", "firebrick")) +
-#   theme(text=element_text(family="Times",size=18)) +
-#   scale_y_continuous(name="Mean Demand (in KWh)") +
-#   scale_x_continuous(name="Forecast Uncertainty (in average kWh CRPS)",
-#                      limits=c(0, 0.1),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
-#   theme(legend.position=c(0.8,0.7))
-# ggplot3
-# ggsave(paste(Sys.Date(),plt3nam,sep="_"),path="./Plots")
+plot4i  <- readRDS("smuf_compare_0704_KDxAG_large_mult-gofmin.rds")
+# niceleg <- c(paste('KDE',c(4,24),'h window'),paste('ARMA-GARCH GoF',c(NA,0.01,0.05,0.2,0.5,1.0,2.0)))
+plot4   <- plot4i[[1]]
+# rownames(plot4) <- niceleg
+plot4   <- melt(t(plot4), id=colnames(t(plot4)))
+plot4[,1]       <- as.numeric(sub(".*\\.", "", plot4[,1]))
+colnames(plot4) <- c('ahead_t','Method','CRPS')
+ggplot4 <- ggplot(plot4, aes(ahead_t,CRPS, color=Method)) + geom_line() +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_line(colour = "gray90"),
+                     panel.grid.minor = element_line(colour = "gray95"), axis.line = element_line(colour = "gray60")) +
+    theme(text=element_text(family="Times",size=18)) +
+    scale_x_continuous(name="Time ahead forecast (h)") +
+    scale_y_continuous(limits=c(0.08, 0.155))#,breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
+ggplot4
+ggsave(paste(Sys.Date(),plt4nam,sep="_"),path="./Plots")
 
 
 
