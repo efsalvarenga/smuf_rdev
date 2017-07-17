@@ -66,7 +66,7 @@ for (h in hrz_lim){
   res_sdev_ag  <- fx_applgrp(optgrp_sdev,wv46,wm01_01,fx_int_fcstgeneric_armagarch,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh,crossvalfocus)
   
   cat("[OptSEAF] ")
-  # wm13n        <- t(scale(t(wl06[[4]]))) # if CLU go ahead
+  # wm13n        <- t(scale(t(wl06[[4]]))) # for clulight03, feed optSDEV as initial
   wm13seaf     <- as.matrix(wl06[[4]][,crossvalfocus])
   optgrp_seaf  <- foreach (i = 1:frontierstp,
                            .packages=c("forecast","rgenoud"),
@@ -141,6 +141,12 @@ for (h in hrz_lim){
     bighlpcrps   <- fx_sav_optress(c("sdev_kd+ag",h,frontierstp,length(cus_list),crossvalstps,armalags,crossvalfocus,runkey),
                                    list(c(h,frontierstp,length(cus_list)),cbind(cr01rnd,wv45rnd),res_sdev_kd,res_sdev_ag))#,res_crps_kd,res_crps_ag))
   }
+  
+  # workarround for seaf (correct later)
+  bighlpcrps   <- fx_sav_optress(c("sdev+seaf",h,frontierstp,length(cus_list),crossvalstps,armalags,crossvalfocus,runkey),
+                                 list(c(h,frontierstp,length(cus_list)),cbind(cr01rnd,wv45rnd),res_sdev_kd,res_sdev_ag,res_crps_kd,res_crps_ag))
+  
+  
   saveRDS(list(bighlpopgr,bighlpcrps),  file=savfile)
   
   fx_plt_rnd_vs_opt(bighlpcrps[[length(bighlpcrps)]][[2]],c(0,0.1),c(0,sum(wv45)),myleg,"CRPS")

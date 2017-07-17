@@ -511,7 +511,7 @@ fx_plt_rnd_vs_opt <- function(bighlp,myrangex,myrangey,myleg,xunit) {
   plot(myrangex,myrangey, bty="n", type="n", xlab=xunit,
        ylab="Mean Demand",main=paste("optimum vs random groups for h =",bighlp[[1]][[1]][1]))
   grid (NA,NULL, lty = 'dotted')
-  mycolors=c("darkgreen","green","darkblue","blue")
+  mycolors=rainbow(length(bighlp))
   points(bighlp[[2]][,1],bighlp[[2]][,2],col="gray80",pch=20)
   for (i in 3:length(bighlp)){
     points(bighlp[[i]][,1],bighlp[[i]][,2],col=mycolors[i-2],pch=20)

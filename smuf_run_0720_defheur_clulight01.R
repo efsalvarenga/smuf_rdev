@@ -11,7 +11,7 @@
 #===========================================
 # Initialising
 #===========================================
-# setwd("~/GitRepos/smuf_rdev")
+setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
 savfile = "smuf_run_0720_defheur_clulight01.rds"
 
@@ -27,16 +27,16 @@ data_size     <- importpar[5]
 # Integrated Parameters
 #===========================================
 #cus_list to 1000, stp to 150 (detectcores), hrz_lim larger (0:167)*113), turn on CV
-cus_list      <- seq(1,10)
-frontierstp   <- 3             # Number of demand bins (Stepwise frontier for portfolio optimisation)
-frontierexp   <- 1.2                     # Exponentiality of frontier steps
+cus_list      <- seq(1,200)
+frontierstp   <- 7             # Number of demand bins (Stepwise frontier for portfolio optimisation)
+frontierexp   <- 1                     # Exponentiality of frontier steps
 max.gen       <- 300                     # For genetic opt
 waitgen       <- 50                      # For genetic opt
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 win_selec     <- win_size[2]
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1,6)               # Up to s02
-hrz_lim       <- 0 #seq(3,4)*113            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
+hrz_lim       <- seq(1,10)*113*2            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 crossvalstps  <- 8                      # Steps used for multiple crossvalidation (Only KDE)
