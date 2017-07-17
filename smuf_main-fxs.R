@@ -372,7 +372,7 @@ fx_int_fcstgeneric_kdss <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_
   fcst_mc    <- fx_fcst_kdss(wm14,win_selec,ahead_t,out_evhor,sampling)     # returns list with next ahead_t fcst and sd
   wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm13)
   wm05       <- fx_crpsgeneric(wm03,wm13,wm14,fcst_mc,out_evhor,sampling)
-  return(list(wm03fcst,wm05,wm14))
+  return(list(wm03fcst,wm05,wm14,wm13))
 }
 
 fx_int_fcstgeneric_armagarch <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh,gof.min){
@@ -447,6 +447,15 @@ fx_optgrp_sdev <- function (wv42){
     fv02     <- decompose(msts(fv01,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)))
     fv03     <- fv01 - fv02$seasonal
     result   <- sd(fv03)
+  } else {result <- 10}
+  return (result)
+}
+
+fx_optgrp_seaf <- function (wv42){
+  if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
+    fm01     <- as.matrix(wm13seaf[which(wv42>0),])
+    fv02     <- apply(fm01,2,sd)
+    result   <- mean(fv02)
   } else {result <- 10}
   return (result)
 }
