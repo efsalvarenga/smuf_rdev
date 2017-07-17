@@ -66,9 +66,10 @@ ggplot2
 # ggsave(paste(Sys.Date(),plt2nam,sep="_"),path="./Plots")
 
 plt3nam <- "optgrp_01.pdf"
-plot3i  <- readRDS("smuf_run_0624_defheurd.rds")
+# plot3i  <- readRDS("smuf_run_0624_defheurd.rds")
+plot3i  <- readRDS("smuf_run_0704_defheur_med01.rds")
 myleg   <- c("Random","SDKD","SDAG","CVKD","CVAG")
-fx_plt_rnd_vs_opt(plot3i[[2]][[length(plot3i[[2]])]][[2]],c(0,0.15),c(0,15),myleg,"CRPS")
+fx_plt_rnd_vs_opt(plot3i[[2]][[length(plot3i[[2]])]][[2]],c(0,0.05),c(0,27),myleg,"CRPS")
 plot3   <- cbind(as.data.frame(plot3i[[2]][[1]][[2]][[2]]),myleg[1])
 colnames(plot3) <- c("CRPS","uDemand","Grouping")
 niceleg <- c("Optimal (st. dev.)","","Optimal (cross-val.)")
