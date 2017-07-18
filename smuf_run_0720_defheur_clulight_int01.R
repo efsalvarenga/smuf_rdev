@@ -212,4 +212,9 @@ for (j in 1:7){
   biglpcrpsavg[[j]]=biglpcrpsavg[[j]]/11
 }
 fx_plt_rnd_vs_opt(biglpcrpsavg,c(0,0.1),c(0,sum(wv45)),myleg,"CRPS")
+
+for (j in 3:7){
+  cat('\n',myleg[(j-1)],' ',mean(biglpcrpsavg[[j]][,1],na.rm=T))
+}
+
 saveRDS(biglpcrpsavg,  file=paste("summary_",savfile,sep=""))
