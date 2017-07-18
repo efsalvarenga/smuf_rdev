@@ -460,6 +460,22 @@ fx_optgrp_seaf <- function (wv42){
   return (result)
 }
 
+fx_optgrp_ssmix <- function (wv42,defratsd){
+  if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
+    fm101     <- as.matrix(wm13seaf[which(wv42>0),])
+    fv102     <- apply(fm101,2,sd)
+    result1   <- mean(fv102)
+    sd_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,crossvalsize)
+    fv201     <- as.numeric(wv42 %*% wm01_01[,sd_evhor[2]:sd_evhor[1]] / sum(wv42))
+    fv202     <- decompose(msts(fv201,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)))
+    fv203     <- fv201 - fv202$seasonal
+    result2   <- sd(fv203)
+    result    <- defratsd*result2 + (1-defratsd)*result1
+  } else {result <- 10}
+  return (result)
+}
+
+
 fx_applgrp     <- function(optgrp,wv46,wm01_01,fx_to_use,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh,crossvalfocus){
   opt_min_cusd  <- 0
   opt_max_cusd  <- max(wv46)
