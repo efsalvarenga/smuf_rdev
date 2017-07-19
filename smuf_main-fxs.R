@@ -463,13 +463,13 @@ fx_optgrp_seaf <- function (wv42){
 fx_optgrp_ssmix <- function (wv42,defratsd){
   if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
     fm101     <- as.matrix(wm13seaf[which(wv42>0),])
-    fv102     <- apply(fm101,2,sd)
+    fv102     <- apply(fm101,2,sd)/apply(fm101,2,mean)
     result1   <- mean(fv102)
     sd_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,crossvalsize)
     fv201     <- as.numeric(wv42 %*% wm01_01[,sd_evhor[2]:sd_evhor[1]] / sum(wv42))
     fv202     <- decompose(msts(fv201,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)))
     fv203     <- fv201 - fv202$seasonal
-    result2   <- sd(fv203)
+    result2   <- sd(fv203)/mean(fv203)
     result    <- defratsd*result2 + (1-defratsd)*result1
   } else {result <- 10}
   return (result)
