@@ -27,19 +27,19 @@ data_size     <- importpar[5]
 # Integrated Parameters
 #===========================================
 #cus_list to 1000, stp to 150 (detectcores), hrz_lim larger (0:167)*113), turn on CV
-cus_list      <- seq(1,10)#100)
-frontierstp   <- 4#15             # Number of demand bins (Stepwise frontier for portfolio optimisation)
+cus_list      <- seq(1,100)
+frontierstp   <- 15             # Number of demand bins (Stepwise frontier for portfolio optimisation)
 frontierexp   <- 1                     # Exponentiality of frontier steps
-max.gen       <- 100#300                     # For genetic opt
-waitgen       <- 10#50                      # For genetic opt
+max.gen       <- 300                     # For genetic opt
+waitgen       <- 50                      # For genetic opt
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 win_selec     <- win_size[2]
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
-ahead_t       <- seq(1,24)               # Up to s02
-hrz_lim       <- 0#seq(0,2)*113*7            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
+ahead_t       <- seq(1,12)               # Up to s02
+hrz_lim       <- seq(0,2)*113*7            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1/7                       # Number of weeks in the end of in_sample used for crossvalidation
-crossvalstps  <- 2#12                      # Steps used for multiple crossvalidation (Only KDE)
+crossvalstps  <- 12                      # Steps used for multiple crossvalidation (Only KDE)
 crossvalfocus <- c(1)                  # What period is focused when running crossvalidation
 is_wins_weeks <- 12                      # Number of weeks used for in-sample (KDE uses win_size) & seasonality
 sampling      <- 1024                    # For monte-carlo CRPS calculation
@@ -51,7 +51,7 @@ gof.min       <- 0.2                    # GoF crossover value to change ARMA-GAR
 #===========================================
 bighlpopgr <- list()
 bighlpcrps <- list()
-myleg = c("Random","sdev","sdev relax")
+myleg = c("Random","sdev","OptCV7dKD","OptCV1dKD","OptCV7dAG","OptCV1dAG")
 
 for (h in hrz_lim){
   ptm    <- proc.time()
