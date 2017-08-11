@@ -207,7 +207,7 @@ for (i in 2:length(bighlpcrps)){
   }
 }
 for (j in 1:7){
-  biglpcrpsavg[[j]]=biglpcrpsavg[[j]]/11
+  biglpcrpsavg[[j]]=biglpcrpsavg[[j]]/length(hrz_lim)
 }
 fx_plt_rnd_vs_opt(biglpcrpsavg,c(0,0.1),c(0,sum(wv45)),myleg,"CRPS")
 
