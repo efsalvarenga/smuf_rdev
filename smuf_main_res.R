@@ -15,6 +15,7 @@ source("smuf_main-fxs.R")
 
 wm01_00       <- readRDS("smuf_import-complete.rds")
 importpar     <- readRDS("smuf_import-parameter.rds")
+implotdt      <- readRDS("smuf_aux_plots.rds")
 s01           <- importpar[1]
 s02           <- importpar[2]
 s03           <- importpar[3]
@@ -29,39 +30,68 @@ plot1   <- as.data.frame(t(wm01_00[1:cus_no,ds_ini:(ds_ini+ds_len-1)]))
 plot1   <- cbind(seq(1,ds_len),plot1)
 colnames(plot1) <- c("Time",paste("Cus",1:cus_no,sep=""))
 ggplot1a <- ggplot(plot1, aes(Time,Cus2)) +
-  geom_line(color="firebrick") + 
-  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_line(color="black") +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
   labs(x = "Hours (4 weeks)", y = "Demand (KWh)") +
-  theme(text=element_text(family="Times",size=18))
+  theme(text=element_text(family="Times"),
+        axis.text.x = element_text(color="black",size=18),
+        axis.text.y = element_text(color="black",size=18),  
+        axis.title.x = element_text(color="black",size=18),
+        axis.title.y = element_text(color="black",size=18))
 ggplot1b <- ggplot(plot1, aes(Time,Cus4)) +
-  geom_line(color="firebrick") + 
-  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_line(color="black") +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
   labs(x = "Hours (4 weeks)", y = "Demand (KWh)") +
-  theme(text=element_text(family="Times",size=18))
+  theme(text=element_text(family="Times"),
+        axis.text.x = element_text(color="black",size=18),
+        axis.text.y = element_text(color="black",size=18),  
+        axis.title.x = element_text(color="black",size=18),
+        axis.title.y = element_text(color="black",size=18))
 ggplot1c <- ggplot(plot1, aes(Time,Cus5)) +
-  geom_line(color="firebrick") + 
-  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_line(color="black") +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
   labs(x = "Hours (4 weeks)", y = "Demand (KWh)") +
-  theme(text=element_text(family="Times",size=18))
+  theme(text=element_text(family="Times"),
+        axis.text.x = element_text(color="black",size=18),
+        axis.text.y = element_text(color="black",size=18),  
+        axis.title.x = element_text(color="black",size=18),
+        axis.title.y = element_text(color="black",size=18))
 ggplot1d <- ggplot(plot1, aes(Time,Cus6)) +
-  geom_line(color="firebrick") + 
-  theme(plot.title = element_text(hjust = 0.5)) +
+  geom_line(color="black") +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
   labs(x = "Hours (4 weeks)", y = "Demand (KWh)") +
-  theme(text=element_text(family="Times",size=18))
+  theme(text=element_text(family="Times"),
+        axis.text.x = element_text(color="black",size=18),
+        axis.text.y = element_text(color="black",size=18),  
+        axis.title.x = element_text(color="black",size=18),
+        axis.title.y = element_text(color="black",size=18))
 multiplot(ggplot1a, ggplot1d, ggplot1c, ggplot1b, cols=2)
 # ggsave(paste(Sys.Date(),plt1nam,sep="_"),path="./Plots")
 
 plt2nam <- "compare_densities.pdf"
-cus_nos <- c(3,4,8,9)
-sl_win  <- seq(1993:2016)
-plot2   <- as.numeric(wm14[cus_nos,sl_win])
-plot2   <- as.data.frame(plot2)
-plot2   <- cbind(plot2,rep(paste("Cus",cus_nos,sep=""),24))
-colnames(plot2) <- c("Demand","Customer")
-ggplot2 <- ggplot(plot2, aes(Demand, color=Customer, fill=Customer)) +
+plot2   <- implotdt[[2]]
+# cus_nos <- c(3,4,8,9)
+# sl_win  <- seq(1993:2016)
+# plot2   <- as.numeric(wm14[cus_nos,sl_win])
+# plot2   <- as.data.frame(plot2)
+# plot2   <- cbind(plot2,rep(paste("Cus",cus_nos,sep=""),24))
+# colnames(plot2) <- c("Demand","Customer")
+ggplot2 <- ggplot(plot2, aes(Demand, linetype=Customer)) +
+            theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
             geom_density(alpha = 0.1) +
-            theme(text=element_text(family="Times",size=18)) +
-            theme(legend.position=c(0.8,0.7))
+            theme(text=element_text(family="Times"),
+                  axis.text.x = element_text(color="black",size=18),
+                  axis.text.y = element_text(color="black",size=18),  
+                  axis.title.x = element_text(color="black",size=18),
+                  axis.title.y = element_text(color="black",size=18)) +
+            theme(legend.position="none") +
+            labs(x = "Deseasonalised Demand (KWh)", y = "Density") +
+            scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0),limits = c(0,12.5))
 ggplot2
 # ggsave(paste(Sys.Date(),plt2nam,sep="_"),path="./Plots")
 
@@ -106,18 +136,18 @@ ggplot4 <- ggplot(plot4, aes(ahead_t,CRPS, color=Method)) + geom_line() +
     scale_x_continuous(name="Time ahead forecast (h)") +
     scale_y_continuous(limits=c(0.08, 0.155))#,breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
 ggplot4
-ggsave(paste(Sys.Date(),plt4nam,sep="_"),path="./Plots")
+# ggsave(paste(Sys.Date(),plt4nam,sep="_"),path="./Plots")
 
 plt4snam <- "benchKDxAG_simple.pdf"
-plot4s   <- plot4[plot4$Method %in% c("AG0.2", "KD 2"), ]
+plot4s   <- plot4[plot4$Method %in% c("AG0.2", "KD 1", "KD 2"), ]
 ggplot4s <- ggplot(plot4s, aes(ahead_t,CRPS, color=Method)) + geom_line() +
-  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_line(colour = "gray90"),
-                     panel.grid.minor = element_line(colour = "gray95"), axis.line = element_line(colour = "gray60")) +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
   theme(text=element_text(family="Times",size=18)) +
-  scale_x_continuous(name="Time ahead forecast (h)") +
+  scale_x_continuous(name="Time Ahead Forecast (h)") +
   scale_y_continuous(limits=c(0.09, 0.105))#,breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
 ggplot4s
-ggsave(paste(Sys.Date(),plt4snam,sep="_"),path="./Plots")
+# ggsave(paste(Sys.Date(),plt4snam,sep="_"),path="./Plots")
 
 #===========================================
 saveRDS(list(plot1,plot2,plot3),file="smuf_aux_plots.rds")
