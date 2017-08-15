@@ -451,6 +451,18 @@ fx_optgrp_sdev <- function (wv42){
   return (result)
 }
 
+fx_optgrp_sdrlx <- function (wv42){
+  wv42 <- wv42/10
+  if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
+    sd_evhor <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,crossvalsize)
+    fv01     <- as.numeric(wv42 %*% wm01_01[,sd_evhor[2]:sd_evhor[1]] / sum(wv42))
+    fv02     <- decompose(msts(fv01,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)))
+    fv03     <- fv01 - fv02$seasonal
+    result   <- sd(fv03)
+  } else {result <- 10}
+  return (result)
+}
+
 fx_optgrp_seaf <- function (wv42){
   if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
     fm01     <- as.matrix(wm13seaf[which(wv42>0),])
