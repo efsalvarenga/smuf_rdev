@@ -108,7 +108,16 @@ ggplot4 <- ggplot(plot4, aes(ahead_t,CRPS, color=Method)) + geom_line() +
 ggplot4
 ggsave(paste(Sys.Date(),plt4nam,sep="_"),path="./Plots")
 
-
+plt4snam <- "benchKDxAG_simple.pdf"
+plot4s   <- plot4[plot4$Method %in% c("AG0.2", "KD 2"), ]
+ggplot4s <- ggplot(plot4s, aes(ahead_t,CRPS, color=Method)) + geom_line() +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_line(colour = "gray90"),
+                     panel.grid.minor = element_line(colour = "gray95"), axis.line = element_line(colour = "gray60")) +
+  theme(text=element_text(family="Times",size=18)) +
+  scale_x_continuous(name="Time ahead forecast (h)") +
+  scale_y_continuous(limits=c(0.09, 0.105))#,breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
+ggplot4s
+ggsave(paste(Sys.Date(),plt4snam,sep="_"),path="./Plots")
 
 #===========================================
 saveRDS(list(plot1,plot2,plot3),file="smuf_aux_plots.rds")
