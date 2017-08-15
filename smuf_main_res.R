@@ -129,10 +129,16 @@ plot4   <- plot4i[[1]]
 plot4   <- melt(t(plot4), id=colnames(t(plot4)))
 plot4[,1]       <- as.numeric(sub(".*\\.", "", plot4[,1]))
 colnames(plot4) <- c('ahead_t','Method','CRPS')
-ggplot4 <- ggplot(plot4, aes(ahead_t,CRPS, color=Method)) + geom_line() +
+ggplot4 <- ggplot(plot4, aes(ahead_t,CRPS, linetype=Method)) + geom_line() +
     theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_line(colour = "gray90"),
                      panel.grid.minor = element_line(colour = "gray95"), axis.line = element_line(colour = "gray60")) +
     theme(text=element_text(family="Times",size=18)) +
+    theme(text=element_text(family="Times"),
+          axis.text.x = element_text(color="black",size=18),
+          axis.text.y = element_text(color="black",size=18),  
+          axis.title.x = element_text(color="black",size=18),
+          axis.title.y = element_text(color="black",size=18),
+          legend.text = element_text(color="black",size=18)) +
     scale_x_continuous(name="Time ahead forecast (h)") +
     scale_y_continuous(limits=c(0.08, 0.155))#,breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
 ggplot4
@@ -140,12 +146,23 @@ ggplot4
 
 plt4snam <- "benchKDxAG_simple.pdf"
 plot4s   <- plot4[plot4$Method %in% c("AG0.2", "KD 1", "KD 2"), ]
-ggplot4s <- ggplot(plot4s, aes(ahead_t,CRPS, color=Method)) + geom_line() +
+levels(plot4s$Method) <- c(levels(plot4s$Method), "ARMA-GARCH(G=0.2)","KDE(W=4)","KDE(W=24)")
+plot4s[plot4s=="AG0.2"]<-"ARMA-GARCH(G=0.2)"
+plot4s[plot4s=="KD 1"]<-"KDE(W=4)"
+plot4s[plot4s=="KD 2"]<-"KDE(W=24)"
+ggplot4s <- ggplot(plot4s, aes(ahead_t,CRPS, linetype=Method)) + geom_line() +
   theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                      panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
-  theme(text=element_text(family="Times",size=18)) +
+  theme(text=element_text(family="Times"),
+        axis.text.x = element_text(color="black",size=18),
+        axis.text.y = element_text(color="black",size=18),  
+        axis.title.x = element_text(color="black",size=18),
+        axis.title.y = element_text(color="black",size=18),
+        legend.title = element_text(color="black",size=14),
+        legend.text = element_text(color="black",size=14)) +
+  theme(legend.position=c(0.9,0.9)) + 
   scale_x_continuous(name="Time Ahead Forecast (h)") +
-  scale_y_continuous(limits=c(0.09, 0.105))#,breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
+  scale_y_continuous(name="Demand (KWh) CRPS",limits=c(0.09, 0.11))#,breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
 ggplot4s
 # ggsave(paste(Sys.Date(),plt4snam,sep="_"),path="./Plots")
 
