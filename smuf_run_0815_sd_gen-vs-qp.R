@@ -30,8 +30,8 @@ data_size     <- importpar[5]
 cus_list      <- seq(1,200) #100
 frontierstp   <- 15             # Number of demand bins (Stepwise frontier for portfolio optimisation)
 frontierexp   <- 1                     # Exponentiality of frontier steps
-max.gen       <- 300                     # For genetic opt
-waitgen       <- 50                      # For genetic opt
+max.gen       <- 500                     # For genetic opt
+waitgen       <- 300                      # For genetic opt
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 win_selec     <- win_size[2]
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
