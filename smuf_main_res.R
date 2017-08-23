@@ -9,6 +9,9 @@
 #===========================================
 library(ggplot2)
 library(reshape)
+library(dplyr)
+library(magrittr)
+library(data.table)
 
 setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
@@ -33,7 +36,7 @@ ggplot1a <- ggplot(plot1, aes(Time,Cus2)) +
   geom_line(color="black") +
   theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                      panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
-  labs(x = "Hours (4 weeks)", y = "Demand (KWh)") +
+  labs(x = "Hours", y = "Demand (kWh)") +
   theme(text=element_text(family="Times"),
         axis.text.x = element_text(color="black",size=18),
         axis.text.y = element_text(color="black",size=18),  
@@ -43,7 +46,7 @@ ggplot1b <- ggplot(plot1, aes(Time,Cus4)) +
   geom_line(color="black") +
   theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                      panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
-  labs(x = "Hours (4 weeks)", y = "Demand (KWh)") +
+  labs(x = "Hours", y = "Demand (kWh)") +
   theme(text=element_text(family="Times"),
         axis.text.x = element_text(color="black",size=18),
         axis.text.y = element_text(color="black",size=18),  
@@ -53,7 +56,7 @@ ggplot1c <- ggplot(plot1, aes(Time,Cus5)) +
   geom_line(color="black") +
   theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                      panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
-  labs(x = "Hours (4 weeks)", y = "Demand (KWh)") +
+  labs(x = "Hours", y = "Demand (kWh)") +
   theme(text=element_text(family="Times"),
         axis.text.x = element_text(color="black",size=18),
         axis.text.y = element_text(color="black",size=18),  
@@ -63,7 +66,7 @@ ggplot1d <- ggplot(plot1, aes(Time,Cus6)) +
   geom_line(color="black") +
   theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                      panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
-  labs(x = "Hours (4 weeks)", y = "Demand (KWh)") +
+  labs(x = "Hours", y = "Demand (kWh)") +
   theme(text=element_text(family="Times"),
         axis.text.x = element_text(color="black",size=18),
         axis.text.y = element_text(color="black",size=18),  
@@ -90,7 +93,7 @@ ggplot2 <- ggplot(plot2, aes(Demand, linetype=Customer)) +
                   axis.title.x = element_text(color="black",size=18),
                   axis.title.y = element_text(color="black",size=18)) +
             theme(legend.position="none") +
-            labs(x = "Deseasonalised Demand (KWh)", y = "Density") +
+            labs(x = "Deseasonalised Demand (kWh)", y = "Density") +
             scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0),limits = c(0,12.5))
 ggplot2
 # ggsave(paste(Sys.Date(),plt2nam,sep="_"),path="./Plots")
@@ -113,13 +116,32 @@ ggplot3 <- ggplot(plot3, aes(CRPS,uDemand, color=Grouping)) + geom_point() +
                      panel.grid.minor = element_line(colour = "gray95"), axis.line = element_line(colour = "gray60")) +
   scale_color_manual(values=c("gray80", "dodgerblue3", "firebrick")) +
   theme(text=element_text(family="Times",size=18)) +
-  scale_y_continuous(name="Mean Demand (in KWh)") +
+  scale_y_continuous(name="Mean Demand (in kWh)") +
   scale_x_continuous(name="Forecast Uncertainty (in average kWh CRPS)",
                      limits=c(0, 0.1),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
   theme(legend.position=c(0.8,0.7))
 ggplot3
-ggsave(paste(Sys.Date(),plt3nam,sep="_"),path="./Plots")
+# ggsave(paste(Sys.Date(),plt3nam,sep="_"),path="./Plots")
 
+plt3rnam <- "rndgrp_01.pdf"
+plot3r   <- plot3[plot3$Grouping == 'Random',]
+plot3r$uDemand <- round(plot3r$uDemand * 0.4)
+dt <- data.table(plot3r)
+setkey(dt,uDemand)
+plot3rs <- as.data.frame(dt[,mean(CRPS),by=uDemand])
+plot3rs$uDemand <- plot3rs$uDemand / 0.4
+plot3rs[1,1]=1.25
+ggplot3rs <- ggplot(plot3rs, aes(V1,uDemand)) + geom_point() +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_line(colour = "gray90"),
+                     panel.grid.minor = element_line(colour='gray95'), axis.line = element_line(colour = "gray60")) +
+  theme(text=element_text(family="Times"),
+        axis.text.x = element_text(color="black",size=18),
+        axis.text.y = element_text(color="black",size=18),  
+        axis.title.x = element_text(color="black",size=18),
+        axis.title.y = element_text(color="black",size=18)) +
+  labs(x = "Forecast Uncertainty (average kWh CRPS)", y = "Demand (kWh)") +
+  scale_x_continuous(expand = c(0, 0),limits = c(0.005,0.055)) + scale_y_continuous(expand = c(0, 0),limits=c(0,26))
+ggplot3rs
 
 plt4nam <- "benchKDxAG.pdf"
 plot4i  <- readRDS("smuf_compare_0704_KDxAG_large_mult-gofmin.rds")
@@ -146,10 +168,10 @@ ggplot4
 
 plt4snam <- "benchKDxAG_simple.pdf"
 plot4s   <- plot4[plot4$Method %in% c("AG0.2", "KD 1", "KD 2"), ]
-levels(plot4s$Method) <- c(levels(plot4s$Method), "ARMA-GARCH(G=0.2)","KDE(W=4)","KDE(W=24)")
+levels(plot4s$Method) <- c(levels(plot4s$Method), "ARMA-GARCH(G=0.2)","KDE using 4h","KDE using 24h")
 plot4s[plot4s=="AG0.2"]<-"ARMA-GARCH(G=0.2)"
-plot4s[plot4s=="KD 1"]<-"KDE(W=4)"
-plot4s[plot4s=="KD 2"]<-"KDE(W=24)"
+plot4s[plot4s=="KD 1"]<-"KDE using 4h"
+plot4s[plot4s=="KD 2"]<-"KDE using 24h"
 ggplot4s <- ggplot(plot4s, aes(ahead_t,CRPS, linetype=Method)) + geom_line() +
   theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                      panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
@@ -161,8 +183,8 @@ ggplot4s <- ggplot(plot4s, aes(ahead_t,CRPS, linetype=Method)) + geom_line() +
         legend.title = element_text(color="black",size=14),
         legend.text = element_text(color="black",size=14)) +
   theme(legend.position=c(0.9,0.9)) + 
-  scale_x_continuous(name="Time Ahead Forecast (h)") +
-  scale_y_continuous(name="Demand (KWh) CRPS",limits=c(0.09, 0.11))#,breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
+  scale_x_continuous(name="Forecast Horizon (h)") +
+  scale_y_continuous(name="Forecast Uncertainty (average kWh CRPS)",limits=c(0.09, 0.11))#,breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
 ggplot4s
 # ggsave(paste(Sys.Date(),plt4snam,sep="_"),path="./Plots")
 
