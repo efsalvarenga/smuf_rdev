@@ -109,7 +109,7 @@ for (h in hrz_lim){
                              opt_min_cusd  = wv46[i]
                              opt_max_cusd  = wv46[i+1]
                              optgrp   <- genoud(fx_optgrp_sdrlx, nvars=nrow(wm01_01), max.generations=max.gen, wait.generations=waitgen,
-                                                starting.values=optgrp_sdev[i,], Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(10,nrow(wm01_01)))),
+                                                starting.values=(10*optgrp_sdev[i,]), Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(10,nrow(wm01_01)))),
                                                 data.type.int=TRUE,  int.seed=1,
                                                 print.level=1)
                              if(optgrp$value == 10) {
