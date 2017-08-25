@@ -72,6 +72,21 @@ for (h in hrz_lim){
   # Random groups & evaluation
   #===========================================
   cat("[Rnd] ")
+  groups     <- c(1,2,3,4,5,10,20)
+  rounds     <- 5
+  
+  wm01_02l   <- foreach (i=1:length(groups),.combine=c("rbind"),.packages='doParallel') %dopar%{
+    rod <- foreach (j=1:rounds,.combine=c("rbind")) %do%{
+      vec  <- rep(0,length(cus_list))
+      samp <- sample(cus_list,groups[i],replace=F)
+      vec[samp] <- 1
+      vec
+    }
+    rod
+  }
+  
+  rowSums(wm01_02l)
+  
   wm01_02l   <- fx_rndgrp(wm01_01,frontierstp)
   
   
