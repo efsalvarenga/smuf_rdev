@@ -75,3 +75,4 @@ Ico*
 
 *.Rhistory
 *.RData
+.Rproj.user
