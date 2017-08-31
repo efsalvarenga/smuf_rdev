@@ -30,13 +30,13 @@ data_size     <- importpar[5]
 # Integrated Parameters
 #===========================================
 # change for superun: cus 1000, hrz_lim steps, gof steps, arma-lags 10
-cus_list      <- seq(1,50)#300)
+cus_list      <- seq(1,100)#300)
 # frontierstp   <- 5                     # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 win_selec     <- win_size[2]
 # cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1, (72/sum_of_h))   # Up to s02
-hrz_lim       <- seq(1:40)*37            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
+hrz_lim       <- seq(1:200)*37            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 # crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 # crossvalstps  <- 2                       # Steps used for multiple crossvalidation (Only KDE)
@@ -55,15 +55,15 @@ for (h in hrz_lim){
   ptm <- proc.time()                  # Reset clock
   cat("\n\nStep",match(h,hrz_lim), "of",length(hrz_lim),"| Running BIG [h] LOOP with h =",h,"\n")
   cat("KD04 ")
-  wl06kdWS04  <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size[1],is_wins_weeks,crossvalsize,T,armalags,cross_overh,gof.min)
+  wl06kdWS04  <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,4,is_wins_weeks,crossvalsize,T,armalags,cross_overh,gof.min)
   cat("KD06 ")
-  wl06kdWS06  <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size[1],is_wins_weeks,crossvalsize,T,armalags,cross_overh,gof.min)
+  wl06kdWS06  <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,6,is_wins_weeks,crossvalsize,T,armalags,cross_overh,gof.min)
   cat("KD12 ")
-  wl06kdWS12  <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size[1],is_wins_weeks,crossvalsize,T,armalags,cross_overh,gof.min)
+  wl06kdWS12  <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,12,is_wins_weeks,crossvalsize,T,armalags,cross_overh,gof.min)
   cat("KD24 ")
-  wl06kdWS24  <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size[2],is_wins_weeks,crossvalsize,T,armalags,cross_overh,gof.min)
+  wl06kdWS24  <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,24,is_wins_weeks,crossvalsize,T,armalags,cross_overh,gof.min)
   cat("KD48 ")
-  wl06kdWS48  <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_size[2],is_wins_weeks,crossvalsize,T,armalags,cross_overh,gof.min)
+  wl06kdWS48  <- fx_int_fcstgeneric_kdss(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,48,is_wins_weeks,crossvalsize,T,armalags,cross_overh,gof.min)
   cat(" [Consolidating]\n")
   reslis.h[[1]] <- rbind(reslis.h[[1]],colMeans(wl06kdWS04[[2]],na.rm=T))
   reslis.h[[2]] <- rbind(reslis.h[[2]],colMeans(wl06kdWS06[[2]],na.rm=T))
