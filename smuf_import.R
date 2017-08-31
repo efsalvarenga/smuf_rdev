@@ -106,10 +106,7 @@ for (j in cus_list){
       if (i<170){
         wv02[i] = 0
       } else {
-        if (is.na(wv02[(i+1)]) == TRUE) {
-          wv02[i] = wv02[(i-168)]
-        }
-        else {wv02[i] = (wv02[i-1]+wv02[i+1])/2}
+        wv02[i] = wv02[(i-168)]
       }
     }
   }
