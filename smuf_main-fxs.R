@@ -78,6 +78,23 @@ fx_seas2   <- function (wm01,s01,s02,sum_of_h,def_evhor){
   return(list(wm12s,wm12r,wm12t))
 }
 
+fx_seas3   <- function (wm01,s01,s02,sum_of_h,def_evhor,is_wins_weeks){
+  wm12     <- foreach (j = 1:nrow(wm01), .combine=c("rbind"), .packages=c("forecast")) %dopar% {
+    wv31i  <- wm01[j,1:def_evhor[7]]
+    wv32i  <- stl(msts(wv31i,seasonal.periods=c(s01/sum_of_h,s02/sum_of_h)), s.window=7, robust=TRUE)
+    wv32is <- wv32i$time.series[((is_wins_weeks-1)*s02+1):(is_wins_weeks*s02),1]
+    wv32it <- wv32i$time.series[,2]
+    wv32ir <- wv32i$time.series[,3]
+    c(wv32is,wv32ir,wv32it)
+  }
+  wm12  <- rbind(wm12)
+  sepp  <- s02+(ncol(wm12)-s02)/2
+  wm12s <- rbind(wm12[,1:s02])
+  wm12r <- rbind(wm12[,(s02+1):sepp])
+  wm12t <- rbind(wm12[,(sepp+1):ncol(wm12)])
+  return(list(wm12s,wm12r,wm12t))
+}
+
 fx_unseas2 <- function (wm01,wm02,s02,def_evhor){
   wm14     <- foreach (j = 1:nrow(wm01), .combine=c("rbind")) %dopar% {
     wv33b  <- wm02[[1]][j,1:(def_evhor[6] - def_evhor[7])]
@@ -366,6 +383,19 @@ fx_int_fcstgeneric_kdss <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_
   out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
   wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                         # work matrix
   wl02       <- fx_seas2(wm01,s01,s02,sum_of_h,out_evhor)                   # in-sample seasonality pattern (s,r,t)
+  wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                        # out-sample original load data
+  wm13       <- fx_unseas2(wm01,wl02,s02,out_evhor)                         # out-sample estimated trend + seas
+  wm14       <- wl02[[2]]                                                   # in-sample noise
+  fcst_mc    <- fx_fcst_kdss(wm14,win_selec,ahead_t,out_evhor,sampling)     # returns list with next ahead_t fcst and sd
+  wm03fcst   <- fx_fcstgeneric(fcst_mc,out_evhor,wm13)
+  wm05       <- fx_crpsgeneric(wm03,wm13,wm14,fcst_mc,out_evhor,sampling)
+  return(list(wm03fcst,wm05,wm14,wm13))
+}
+
+fx_int_fcstgeneric_kdss2 <- function(wm01_01,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,fcst_run,armalags,cross_overh,gof.min){
+  out_evhor  <- fx_evhor(wm01_01,h,in_sample_fr,ahead_t,s02,is_wins_weeks,0)
+  wm01       <- wm01_01[,out_evhor[2]:out_evhor[3]]                         # work matrix
+  wl02       <- fx_seas3(wm01,s01,s02,sum_of_h,out_evhor,is_wins_weeks)     # in-sample seasonality pattern (s,r,t)
   wm03       <- wm01[,(out_evhor[4]+1):out_evhor[6]]                        # out-sample original load data
   wm13       <- fx_unseas2(wm01,wl02,s02,out_evhor)                         # out-sample estimated trend + seas
   wm14       <- wl02[[2]]                                                   # in-sample noise
