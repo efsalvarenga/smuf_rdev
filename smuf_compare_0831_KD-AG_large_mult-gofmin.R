@@ -30,7 +30,7 @@ data_size     <- importpar[5]
 # Integrated Parameters
 #===========================================
 # change for superun: cus 1000, hrz_lim steps, gof steps, arma-lags 10
-cus_list      <- seq(1,10)#300)
+cus_list      <- seq(1,300)
 # frontierstp   <- 5                     # Number of demand bins (Stepwise frontier for portfolio optimisation)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 win_selec     <- win_size[2]
