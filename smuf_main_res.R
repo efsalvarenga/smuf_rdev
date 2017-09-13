@@ -15,19 +15,22 @@ library(data.table)
 
 setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
-
-wm01_00       <- readRDS("smuf_import-complete.rds")
-importpar     <- readRDS("smuf_import-parameter.rds")
-implotdt      <- readRDS("smuf_aux_plots.rds")
-s01           <- importpar[1]
-s02           <- importpar[2]
-s03           <- importpar[3]
-sum_of_h      <- importpar[4]
-data_size     <- importpar[5]
+{
+  # wm01_00       <- readRDS("smuf_import-complete.rds")
+  # importpar     <- readRDS("smuf_import-parameter.rds")
+  wm01_00       <- readRDS("smuf_import-completeIR.rds")
+  importpar     <- readRDS("smuf_import-parameterIR.rds")
+  implotdt      <- readRDS("smuf_aux_plots.rds")
+  s01           <- importpar[1]
+  s02           <- importpar[2]
+  s03           <- importpar[3]
+  sum_of_h      <- importpar[4]
+  data_size     <- importpar[5]
+}
 
 plt1nam <- "compare_demands.pdf"
-cus_no  <- 1000
-ds_ini  <- 1001
+cus_no  <- 900
+ds_ini  <- 2001
 ds_len  <- s02*4
 plot1   <- as.data.frame(t(wm01_00[1:cus_no,ds_ini:(ds_ini+ds_len-1)]))
 plot1   <- cbind(seq(1,ds_len),plot1)
@@ -76,13 +79,15 @@ multiplot(ggplot1a, ggplot1d, ggplot1c, ggplot1b, cols=2)
 # ggsave(paste(Sys.Date(),plt1nam,sep="_"),path="./Plots")
 
 plt2nam <- "compare_densities.pdf"
-plot2   <- implotdt[[2]]
-# cus_nos <- c(3,4,8,9)
-# sl_win  <- seq(1993:2016)
-# plot2   <- as.numeric(wm14[cus_nos,sl_win])
-# plot2   <- as.data.frame(plot2)
-# plot2   <- cbind(plot2,rep(paste("Cus",cus_nos,sep=""),24))
-# colnames(plot2) <- c("Demand","Customer")
+# plot2   <- implotdt[[2]]
+# cus_nos <- c(8,9,12,14) # for KO
+{cus_nos <- c(2,5,12,16)#seq(11,15)) # for IR
+ds_init <- 1993
+sl_win  <- seq(ds_init,(ds_init+s01-1))
+plot2   <- as.numeric(wm01_00[cus_nos,sl_win])
+plot2   <- as.data.frame(plot2)
+plot2   <- cbind(plot2,rep(paste("Cus",cus_nos,sep=""),s01))
+colnames(plot2) <- c("Demand","Customer")}
 ggplot2 <- ggplot(plot2, aes(Demand, linetype=Customer)) +
             theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                      panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
@@ -93,8 +98,8 @@ ggplot2 <- ggplot(plot2, aes(Demand, linetype=Customer)) +
                   axis.title.x = element_text(color="black",size=18),
                   axis.title.y = element_text(color="black",size=18)) +
             theme(legend.position="none") +
-            labs(x = "Deseasonalised Demand (kWh)", y = "Density") +
-            scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0),limits = c(0,12.5))
+            labs(x = "Demand (kWh)", y = "Density") +
+            scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0))
 ggplot2
 # ggsave(paste(Sys.Date(),plt2nam,sep="_"),path="./Plots")
 
@@ -167,12 +172,14 @@ ggplot4
 # ggsave(paste(Sys.Date(),plt4nam,sep="_"),path="./Plots")
 
 plt4snam <- "benchKDxAG_simple.pdf"
-plot4s   <- plot4[plot4$Method %in% c("AG0.2", "KD 1", "KD 2"), ]
-levels(plot4s$Method) <- c(levels(plot4s$Method), "ARMA-GARCH(G=0.2)","KDE using 4h","KDE using 24h")
-plot4s[plot4s=="AG0.2"]<-"ARMA-GARCH(G=0.2)"
-plot4s[plot4s=="KD 1"]<-"KDE using 4h"
-plot4s[plot4s=="KD 2"]<-"KDE using 24h"
-ggplot4s <- ggplot(plot4s, aes(ahead_t,CRPS, linetype=Method)) + geom_line() +
+plot4s <- plot4
+levels(plot4s$Method) <- c(levels(plot4s$Method), "ARMA-GARCH(\u03B4=0.01)","ARMA-GARCH(\u03B4=0.05)","ARMA-GARCH(\u03B4=0.20)","ARMA-GARCH(\u03B4=0.00)","KDE")
+{plot4s[plot4s=="KD24"]<-"KDE"
+plot4s[plot4s=="AG0.00"]<-"ARMA-GARCH(\u03B4=0.00)"
+plot4s[plot4s=="AG0.01"]<-"ARMA-GARCH(\u03B4=0.01)"
+plot4s[plot4s=="AG0.05"]<-"ARMA-GARCH(\u03B4=0.05)"
+plot4s[plot4s=="AG0.20"]<-"ARMA-GARCH(\u03B4=0.20)"}
+ggplot4s <- ggplot(plot4s, aes(ahead_t,CRPS, colour=Method, linetype=Method)) + geom_line() +
   theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                      panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
   theme(text=element_text(family="Times"),
@@ -182,11 +189,12 @@ ggplot4s <- ggplot(plot4s, aes(ahead_t,CRPS, linetype=Method)) + geom_line() +
         axis.title.y = element_text(color="black",size=18),
         legend.title = element_text(color="black",size=14),
         legend.text = element_text(color="black",size=14)) +
-  theme(legend.position=c(0.9,0.9)) + 
-  scale_x_continuous(name="Forecast Horizon (h)") +
-  scale_y_continuous(name="Forecast Uncertainty (average kWh CRPS)",limits=c(0.09, 0.11))#,breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
+  theme(legend.position=c(0.8,0.9)) + 
+  scale_x_continuous(name="Forecast lead time (h)") +
+  scale_y_continuous(name="CRPS (kW)",limits=c(0.09, 0.121)) + 
+  scale_colour_grey()
 ggplot4s
 # ggsave(paste(Sys.Date(),plt4snam,sep="_"),path="./Plots")
-
+expression(beta)
 #===========================================
 saveRDS(list(plot1,plot2,plot3),file="smuf_aux_plots.rds")
