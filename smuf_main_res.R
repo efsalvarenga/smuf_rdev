@@ -144,7 +144,7 @@ ggplot3rs <- ggplot(plot3rs, aes(V1,uDemand)) + geom_point() +
 ggplot3rs
 
 plt4nam <- "benchKDxAG.pdf"
-plot4i  <- readRDS("smuf_compare_0704_KDxAG_large_mult-gofmin.rds")
+plot4i  <- readRDS("smuf_temp_compare.rds")
 # niceleg <- c(paste('KDE',c(4,24),'h window'),paste('ARMA-GARCH GoF',c(NA,0.01,0.05,0.2,0.5,1.0,2.0)))
 plot4   <- plot4i[[1]]
 # rownames(plot4) <- niceleg
@@ -162,7 +162,7 @@ ggplot4 <- ggplot(plot4, aes(ahead_t,CRPS, linetype=Method)) + geom_line() +
           axis.title.y = element_text(color="black",size=18),
           legend.text = element_text(color="black",size=18)) +
     scale_x_continuous(name="Time ahead forecast (h)") +
-    scale_y_continuous(limits=c(0.08, 0.155))#,breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
+    scale_y_continuous(limits=c(0.09, 0.121))#,breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
 ggplot4
 # ggsave(paste(Sys.Date(),plt4nam,sep="_"),path="./Plots")
 
