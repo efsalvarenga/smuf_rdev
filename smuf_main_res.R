@@ -30,7 +30,7 @@ source("smuf_main-fxs.R")
 
 plt1nam <- "compare_demands.pdf"
 cus_no  <- 900
-ds_ini  <- 1001
+ds_ini  <- 2001
 ds_len  <- s02*4
 plot1   <- as.data.frame(t(wm01_00[1:cus_no,ds_ini:(ds_ini+ds_len-1)]))
 plot1   <- cbind(seq(1,ds_len),plot1)
@@ -80,12 +80,14 @@ multiplot(ggplot1a, ggplot1d, ggplot1c, ggplot1b, cols=2)
 
 plt2nam <- "compare_densities.pdf"
 # plot2   <- implotdt[[2]]
-cus_nos <- c(3,4,8,9)
-sl_win  <- seq(1993:2016)
-plot2   <- as.numeric(wm14[cus_nos,sl_win])
+# cus_nos <- c(8,9,12,14) # for KO
+{cus_nos <- c(2,5,12,16)#seq(11,15)) # for IR
+ds_init <- 1993
+sl_win  <- seq(ds_init,(ds_init+s01-1))
+plot2   <- as.numeric(wm01_00[cus_nos,sl_win])
 plot2   <- as.data.frame(plot2)
-plot2   <- cbind(plot2,rep(paste("Cus",cus_nos,sep=""),24))
-colnames(plot2) <- c("Demand","Customer")
+plot2   <- cbind(plot2,rep(paste("Cus",cus_nos,sep=""),s01))
+colnames(plot2) <- c("Demand","Customer")}
 ggplot2 <- ggplot(plot2, aes(Demand, linetype=Customer)) +
             theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                      panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
@@ -96,8 +98,8 @@ ggplot2 <- ggplot(plot2, aes(Demand, linetype=Customer)) +
                   axis.title.x = element_text(color="black",size=18),
                   axis.title.y = element_text(color="black",size=18)) +
             theme(legend.position="none") +
-            labs(x = "Deseasonalised Demand (kWh)", y = "Density") +
-            scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0),limits = c(0,12.5))
+            labs(x = "Demand (kWh)", y = "Density") +
+            scale_x_continuous(expand = c(0, 0)) + scale_y_continuous(expand = c(0, 0))
 ggplot2
 # ggsave(paste(Sys.Date(),plt2nam,sep="_"),path="./Plots")
 
