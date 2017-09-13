@@ -167,12 +167,14 @@ ggplot4
 # ggsave(paste(Sys.Date(),plt4nam,sep="_"),path="./Plots")
 
 plt4snam <- "benchKDxAG_simple.pdf"
-plot4s   <- plot4[plot4$Method %in% c("AG0.2", "KD 1", "KD 2"), ]
-levels(plot4s$Method) <- c(levels(plot4s$Method), "ARMA-GARCH(G=0.2)","KDE using 4h","KDE using 24h")
-plot4s[plot4s=="AG0.2"]<-"ARMA-GARCH(G=0.2)"
-plot4s[plot4s=="KD 1"]<-"KDE using 4h"
-plot4s[plot4s=="KD 2"]<-"KDE using 24h"
-ggplot4s <- ggplot(plot4s, aes(ahead_t,CRPS, linetype=Method)) + geom_line() +
+plot4s <- plot4
+levels(plot4s$Method) <- c(levels(plot4s$Method), "ARMA-GARCH(\u03B4=0.01)","ARMA-GARCH(\u03B4=0.05)","ARMA-GARCH(\u03B4=0.20)","ARMA-GARCH(\u03B4=0.00)","KDE")
+{plot4s[plot4s=="KD24"]<-"KDE"
+plot4s[plot4s=="AG0.00"]<-"ARMA-GARCH(\u03B4=0.00)"
+plot4s[plot4s=="AG0.01"]<-"ARMA-GARCH(\u03B4=0.01)"
+plot4s[plot4s=="AG0.05"]<-"ARMA-GARCH(\u03B4=0.05)"
+plot4s[plot4s=="AG0.20"]<-"ARMA-GARCH(\u03B4=0.20)"}
+ggplot4s <- ggplot(plot4s, aes(ahead_t,CRPS, colour=Method, linetype=Method)) + geom_line() +
   theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                      panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
   theme(text=element_text(family="Times"),
@@ -182,11 +184,12 @@ ggplot4s <- ggplot(plot4s, aes(ahead_t,CRPS, linetype=Method)) + geom_line() +
         axis.title.y = element_text(color="black",size=18),
         legend.title = element_text(color="black",size=14),
         legend.text = element_text(color="black",size=14)) +
-  theme(legend.position=c(0.9,0.9)) + 
-  scale_x_continuous(name="Forecast Horizon (h)") +
-  scale_y_continuous(name="Forecast Uncertainty (average kWh CRPS)",limits=c(0.09, 0.11))#,breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
+  theme(legend.position=c(0.8,0.9)) + 
+  scale_x_continuous(name="Forecast lead time (h)") +
+  scale_y_continuous(name="CRPS (kW)",limits=c(0.09, 0.121)) + 
+  scale_colour_grey()
 ggplot4s
 # ggsave(paste(Sys.Date(),plt4snam,sep="_"),path="./Plots")
-
+expression(beta)
 #===========================================
 saveRDS(list(plot1,plot2,plot3),file="smuf_aux_plots.rds")
