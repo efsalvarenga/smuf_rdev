@@ -32,15 +32,28 @@ irishSM2 <- irishSM1 %>%
 irishSM2$hour <- as.numeric(irishSM2$hour)
 irishSM2 <- irishSM2 %>%
   mutate(datehour = Date + hour)
-irishSM2 <- irishSM2[,c(1,5,4)]
-sum(!complete.cases(irishSM2))
-irishSM3 <- irishSM2 %>%
+irishSM2$demand <- as.numeric(irishSM2$demand)
+irishSM2b <- irishSM2[,c(1,5,4)]
+sum(is.na(irishSM2b$demand))
+irishSM3 <- irishSM2b %>%
   spread(datehour,demand)
+
 irishSM4 <- as.matrix(irishSM3[,2:13489])
+irishSM4 <- unname(irishSM4)
+irishSM4 <- t(irishSM4)
+length(which(is.na(irishSM4)))
+while (length(which(is.na(irishSM4))) > 0) {
+  print(length(which(is.na(irishSM4))))
+  irishSM4[which(is.na(irishSM4))] = irishSM4[(which(is.na(irishSM4))-1)]
+}
+length(which(is.na(irishSM4)))
+irishSM4 <- t(irishSM4)
+
 
 # Parameter bundle
 data_size     = ncol(irishSM4)/sum_of_h
 importpar     = c(s01,s02,s03,sum_of_h,data_size)
 
+# Saving
 saveRDS(irishSM4,  file="smuf_import-completeIR.rds")
 saveRDS(importpar, file="smuf_import-parameterIR.rds")
