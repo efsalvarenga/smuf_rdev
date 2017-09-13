@@ -13,10 +13,10 @@
 #===========================================
 setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
-savfile = "smuf_run_0913_sd_KO.rds"
+savfile = "smuf_run_0913_sd_IR.rds"
 
-wm01_00       <- readRDS("smuf_import-complete.rds")
-importpar     <- readRDS("smuf_import-parameter.rds")
+wm01_00       <- readRDS("smuf_import-completeIR.rds")
+importpar     <- readRDS("smuf_import-parameterIR.rds")
 s01           <- importpar[1]
 s02           <- importpar[2]
 s03           <- importpar[3]
