@@ -127,7 +127,7 @@ for (h in hrz_lim){
                                    list(c(h,frontierstp,length(cus_list)),cbind(cr01rnd,wv45rnd),res_sdev_ag))#,res_sdrlx_ag))
   saveRDS(list(bighlpopgr,bighlpcrps),  file=savfile)
   
-  fx_plt_rnd_vs_opt(bighlpcrps[[length(bighlpcrps)]][[2]],c(0,0.1),c(0,sum(wv45)),myleg,"CRPS")
+  fx_plt_rnd_vs_opt(bighlpcrps[[length(bighlpcrps)]][[2]],c(0,1),c(0,sum(wv45)),myleg,"CRPS")
   cat("\n")
   print(proc.time() - ptm)
 }
