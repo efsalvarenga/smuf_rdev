@@ -11,7 +11,7 @@
 #===========================================
 # Initialising
 #===========================================
-setwd("~/GitRepos/smuf_rdev")
+# setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
 cl  <- makeCluster(detectCores())
 registerDoParallel(cl)
@@ -36,7 +36,7 @@ win_size      <- c(4,24)                 # Small and large win_size (select only
 win_selec     <- win_size[2]
 # cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1, (72/sum_of_h))   # Up to s02
-hrz_lim       <- seq(267:400)*37            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
+hrz_lim       <- seq(267,400)*37            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 # crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 # crossvalstps  <- 2                       # Steps used for multiple crossvalidation (Only KDE)
