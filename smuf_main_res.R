@@ -197,7 +197,11 @@ ggplot4s
 # ggsave(paste(Sys.Date(),plt4snam,sep="_"),path="./Plots")
 expression(beta)
 
-plot5  <- readRDS("smuf_run_0913_sd_IR.rds")
+plot5  <- readRDS("smuf_run_0801_defheur_cv1d_summary.rds")
+colMeans(plot5[[3]])
+colMeans(plot5[[4]])
+colMeans(plot5[[5]])
+colMeans(plot5[[6]])
 
 
 #===========================================
