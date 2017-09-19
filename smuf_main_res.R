@@ -196,5 +196,9 @@ ggplot4s <- ggplot(plot4s, aes(ahead_t,CRPS, colour=Method, linetype=Method)) + 
 ggplot4s
 # ggsave(paste(Sys.Date(),plt4snam,sep="_"),path="./Plots")
 expression(beta)
+
+plot5  <- readRDS("smuf_run_0913_sd_IR.rds")
+
+
 #===========================================
 saveRDS(list(plot1,plot2,plot3),file="smuf_aux_plots.rds")
