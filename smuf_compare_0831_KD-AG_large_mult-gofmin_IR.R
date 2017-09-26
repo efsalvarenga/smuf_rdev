@@ -36,7 +36,7 @@ win_size      <- c(4,24)                 # Small and large win_size (select only
 win_selec     <- win_size[2]
 # cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1, (72/sum_of_h))   # Up to s02
-hrz_lim       <- seq(0,300)*37            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
+hrz_lim       <- seq(55,300)*37            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 # crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 # crossvalstps  <- 2                       # Steps used for multiple crossvalidation (Only KDE)
@@ -78,7 +78,7 @@ for (h in hrz_lim){
   }
   rownames(resmat.h) <- c("KD24","AG0.20","AG0.05","AG0.01","AG0.00")
   plt.names <- rownames(resmat.h)
-  fx_plt_mymat(resmat.h,c(0.08,0.13))
+  fx_plt_mymat(resmat.h,c(0.3,0.5))
   legend('topright', inset=c(0,0), legend = plt.names,
          lty=1, col=rainbow(length(plt.names)), bty='n', cex=.75, title="Method")
   print(proc.time() - ptm)
