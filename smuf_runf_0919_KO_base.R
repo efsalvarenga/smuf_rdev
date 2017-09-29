@@ -13,7 +13,7 @@
 #===========================================
 setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
-savfile = "smuf_runf_0919_KO_base.rds"
+savfile = "smuf_runf_0919_KO_base_cont1.rds"
 
 wm01_00       <- readRDS("smuf_import-complete.rds")
 importpar     <- readRDS("smuf_import-parameter.rds")
@@ -36,7 +36,7 @@ win_size      <- c(4,24)                 # Small and large win_size (select only
 win_selec     <- win_size[2]
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1,6)               # Up to s02
-hrz_lim       <- seq(0,10)*113*3            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
+hrz_lim       <- seq(1,10)*113*3            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 crossvalstps  <- 16                      # Steps used for multiple crossvalidation (Only KDE)
@@ -119,11 +119,11 @@ for (h in hrz_lim){
                               }
                               grouped
                             }
-  bighlpopgr   <- fx_sav_optgrps(c("cv7dag",h,frontierstp,length(cus_list),crossvalstps,armalags,crossvalfocus,runkey),optgrp_cv7dag)
-  res_cv7d     <- fx_applgrp(optgrp_cv7dag,wv46,wm01_01,fx_int_fcstgeneric_armagarch,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh,crossvalfocus)
+  bighlpopgr   <- fx_sav_optgrps(c("cv7dag",h,frontierstp,length(cus_list),crossvalstps,armalags,crossvalfocus,runkey),optgrp_cv7d)
+  res_cv7d     <- fx_applgrp(optgrp_cv7d,wv46,wm01_01,fx_int_fcstgeneric_armagarch,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh,crossvalfocus)
   
   bighlpcrps   <- fx_sav_optress(c("sdev+cv7d",h,frontierstp,length(cus_list),crossvalstps,armalags,crossvalfocus,runkey),
-                                 list(c(h,frontierstp,length(cus_list)),cbind(cr01rnd,wv45rnd),res_sdev,res_cv7ag))
+                                 list(c(h,frontierstp,length(cus_list)),cbind(cr01rnd,wv45rnd),res_sdev,res_cv7d))
   
   saveRDS(list(bighlpopgr,bighlpcrps),  file=savfile)
   
