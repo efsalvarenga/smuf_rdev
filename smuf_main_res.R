@@ -18,8 +18,8 @@ source("smuf_main-fxs.R")
 {
   # wm01_00       <- readRDS("smuf_import-complete.rds")
   # importpar     <- readRDS("smuf_import-parameter.rds")
-  wm01_00       <- readRDS("smuf_import-completeIR.rds")
-  importpar     <- readRDS("smuf_import-parameterIR.rds")
+  wm01_00       <- readRDS("smuf_import-complete.rds")
+  importpar     <- readRDS("smuf_import-parameter.rds")
   implotdt      <- readRDS("smuf_aux_plots.rds")
   s01           <- importpar[1]
   s02           <- importpar[2]
@@ -80,8 +80,8 @@ multiplot(ggplot1a, ggplot1d, ggplot1c, ggplot1b, cols=2)
 
 plt2nam <- "compare_densities.pdf"
 # plot2   <- implotdt[[2]]
-# cus_nos <- c(8,9,12,14) # for KO
-{cus_nos <- c(2,5,12,16)#seq(11,15)) # for IR
+{cus_nos <- c(8,9,12,14) # for KO
+# cus_nos <- c(2,5,12,16)#seq(11,15)) # for IR
 ds_init <- 1993
 sl_win  <- seq(ds_init,(ds_init+s01-1))
 plot2   <- as.numeric(wm01_00[cus_nos,sl_win])
@@ -136,15 +136,15 @@ setkey(dt,uDemand)
 plot3rs <- as.data.frame(dt[,mean(CRPS),by=uDemand])
 plot3rs$uDemand <- plot3rs$uDemand / 0.4
 plot3rs[1,1]=1.25
-ggplot3rs <- ggplot(plot3rs, aes(V1,uDemand)) + geom_point() +
-  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_line(colour = "gray90"),
-                     panel.grid.minor = element_line(colour='gray95'), axis.line = element_line(colour = "gray60")) +
+ggplot3rs <- ggplot(plot3rs, aes(V1,uDemand)) + geom_point(size=4,col='gray30') +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
   theme(text=element_text(family="Times"),
         axis.text.x = element_text(color="black",size=18),
         axis.text.y = element_text(color="black",size=18),  
         axis.title.x = element_text(color="black",size=18),
         axis.title.y = element_text(color="black",size=18)) +
-  labs(x = "Forecast Uncertainty (average kWh CRPS)", y = "Demand (kWh)") +
+  labs(x = "CRPS (kWh)", y = "Demand (kWh)") +
   scale_x_continuous(expand = c(0, 0),limits = c(0.005,0.055)) + scale_y_continuous(expand = c(0, 0),limits=c(0,26))
 ggplot3rs
 
