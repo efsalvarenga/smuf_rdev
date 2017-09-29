@@ -517,6 +517,18 @@ fx_optgrp_ssmix <- function (wv42,defratsd){
   return (result)
 }
 
+fx_optgrp_ssmix2 <- function (wv42,defratsd){
+  if (sum(wv42*wv45) > opt_min_cusd & sum(wv42*wv45) <= opt_max_cusd){
+    fm101     <- as.matrix(wm13seaf[which(wv42>0),])
+    fv102     <- apply(fm101,2,sd)/apply(fm101,2,mean)
+    result1   <- mean(fv102)
+    fv201     <- as.matrix(wm14seaf[which(wv42>0),])
+    fv202     <- apply(fm201,2,sd)/apply(fm201,2,mean)
+    result2   <- mean(fv202)
+    result    <- defratsd*result2 + (1-defratsd)*result1
+  } else {result <- 10}
+  return (result)
+}
 
 fx_applgrp     <- function(optgrp,wv46,wm01_01,fx_to_use,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh,crossvalfocus){
   opt_min_cusd  <- 0
