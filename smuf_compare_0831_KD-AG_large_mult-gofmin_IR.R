@@ -35,7 +35,7 @@ cus_list      <- seq(1,300)
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
 win_selec     <- win_size[2]
 # cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
-ahead_t       <- seq(1, (72/sum_of_h))   # Up to s02
+ahead_t       <- seq(1, (144/sum_of_h))   # Up to s02
 hrz_lim       <- seq(55,300)*37            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 # crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
