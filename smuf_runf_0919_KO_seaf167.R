@@ -13,7 +13,7 @@
 #===========================================
 setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
-savfile = "smuf_runf_0919_KO_seaf.rds"
+savfile = "smuf_runf_0919_KO_seaf167.rds"
 
 wm01_00       <- readRDS("smuf_import-complete.rds")
 importpar     <- readRDS("smuf_import-parameter.rds")
@@ -36,7 +36,7 @@ win_size      <- c(4,24)                 # Small and large win_size (select only
 win_selec     <- win_size[2]
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1,6)               # Up to s02
-hrz_lim       <- seq(1,10)*113*3            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
+hrz_lim       <- seq(1,167)*113*3            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 crossvalstps  <- 16                      # Steps used for multiple crossvalidation (Only KDE)
