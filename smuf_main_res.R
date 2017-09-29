@@ -172,7 +172,7 @@ ggplot4
 # ggsave(paste(Sys.Date(),plt4nam,sep="_"),path="./Plots")
 
 plt4snam <- "benchKDxAG_simple.pdf"
-plot4s <- plot4
+plot4s <- readRDS('smuf_compare_0831_KD-AG_large_mult-gofmin_cleaned.rds')
 levels(plot4s$Method) <- c(levels(plot4s$Method), "ARMA-GARCH(\u03B4=0.01)","ARMA-GARCH(\u03B4=0.05)","ARMA-GARCH(\u03B4=0.20)","ARMA-GARCH(\u03B4=0.00)","KDE")
 {plot4s[plot4s=="KD24"]<-"KDE"
 plot4s[plot4s=="AG0.00"]<-"ARMA-GARCH(\u03B4=0.00)"
@@ -195,7 +195,6 @@ ggplot4s <- ggplot(plot4s, aes(ahead_t,CRPS, colour=Method, linetype=Method)) + 
   scale_colour_grey()
 ggplot4s
 # ggsave(paste(Sys.Date(),plt4snam,sep="_"),path="./Plots")
-expression(beta)
 
 plot5  <- readRDS("smuf_run_0801_defheur_cv1d_summary.rds")
 colMeans(plot5[[3]])
