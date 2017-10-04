@@ -15,16 +15,16 @@
 source("smuf_main-fxs.R")
 cl  <- makeCluster(detectCores())
 registerDoParallel(cl)
-savfile = "smuf_compare_0831_KD-AG_large_mult-gofmin_IR.rds"
+savfile = "smuf_compare_0831_KD-AG_large_mult-gofmin_IRhour.rds"
 
 # From smuf_import
 wm01_00       <- readRDS("smuf_import-completeIRhour.rds")
-importpar     <- readRDS("smuf_import-parameterIR.rds")
+importpar     <- readRDS("smuf_import-parameter.rds")
 s01           <- importpar[1]
 s02           <- importpar[2]
 s03           <- importpar[3]
 sum_of_h      <- importpar[4]
-data_size     <- importpar[5]
+data_size     <- 6744
 
 #===========================================
 # Integrated Parameters
@@ -36,7 +36,7 @@ win_size      <- c(4,24)                 # Small and large win_size (select only
 win_selec     <- win_size[2]
 # cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1, (72/sum_of_h))   # Up to s02
-hrz_lim       <- seq(1,300)*37            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
+hrz_lim       <- seq(35,300)*37            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
 in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
 # crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
 # crossvalstps  <- 2                       # Steps used for multiple crossvalidation (Only KDE)
