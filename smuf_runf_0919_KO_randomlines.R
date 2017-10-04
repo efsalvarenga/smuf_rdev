@@ -29,7 +29,7 @@ data_size     <- importpar[5]
 # Integrated Parameters
 #===========================================
 #cus_list to 1000, stp to 150 (detectcores), hrz_lim larger (0:167)*113), turn on CV
-cus_list      <- seq(1,500)
+cus_list      <- seq(1,200)
 frontierstp   <- 16             # Number of demand bins (Stepwise frontier for portfolio optimisation)
 frontierexp   <- 1                     # Exponentiality of frontier steps
 max.gen       <- 100                     # For genetic opt
@@ -89,11 +89,13 @@ for (h in hrz_lim){
   bigrndno   <- rbind(bigrndno,as.data.frame(rndnosimpl))
   saveRDS(bigrndno,  file=savfile)
   
+  plt.names <- c(1,5,10,20,30,40,50,60,70,80,90,100,120,140,160,180,200)
+  
   mymat <- as.matrix(
     bigrndno %>%
       group_by(V1,hor) %>%
       summarise(CRPS=mean(CRPS)) %>%
-      filter(V1 %in% c(1,10,20,30,40,50,100,200,300,400,500)) %>%
+      filter(V1 %in% plt.names) %>%
       spread(hor,CRPS)
     )
   fx_plt_mymat(mymat[,-1],c(0,0.1))
