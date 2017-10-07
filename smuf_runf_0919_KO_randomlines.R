@@ -119,7 +119,7 @@
     print(proc.time() - ptm)
   }
   rndres_sum <- Reduce("+", rndres_big) / length(rndres_big)
-  fx_plt_mymat(rndres_sum,c(0,0.15))
+  fx_plt_mymat(rndres_sum,c(0,0.12))
   legend('topright', inset=c(0,0), legend = c(1,rnd.names),
          lty=1, col=rainbow(1+length(rnd.names)), bty='n', cex=.75, title="Method")    
   
