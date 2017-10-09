@@ -123,4 +123,5 @@
   legend('topright', inset=c(0,0), legend = c(1,rnd.names),
          lty=1, col=rainbow(1+length(rnd.names)), bty='n', cex=.75, title="Method")    
   
+  saveRDS(rndres_sum,'rndres_sum.rds')
   
