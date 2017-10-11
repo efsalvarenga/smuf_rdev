@@ -13,7 +13,7 @@ library(dplyr)
 library(magrittr)
 library(data.table)
 
-# setwd("~/GitRepos/smuf_rdev")
+setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
 {
   # wm01_00       <- readRDS("smuf_import-complete.rds")
@@ -198,7 +198,10 @@ ggplot4s
 
 plt5nam_A <- "seaf24.pdf"
 plot5A    <- readRDS("smuf_runf_0919_KO_seaf10-summary.rds")
-myleg     <- c("Random","SDEV","SEAF_pure","OptSEAF+minEi")
+correc <- (max(plot5A[[2]][,2])-min(plot5A[[2]][,2]))/16/2
+corvec <- runif(1600,-correc,correc)
+plot5A[[2]][,2] <- plot5A[[2]][,2] + corvec
+myleg     <- c("Random","Standard Deviation","Seasonal Signal","Seas. & Remainder Signal")
 plot5A[[2]] <- as.data.frame(cbind(plot5A[[2]],myleg[1]))
 colnames(plot5A[[2]]) <- c("CRPS","uDemand","Grouping")
 plot5A[[3]] <- as.data.frame(cbind(plot5A[[3]],myleg[2]))
@@ -209,49 +212,22 @@ colnames(plot5A[[3]]) <- c("CRPS","uDemand","Grouping")
 colnames(plot5A[[4]]) <- c("CRPS","uDemand","Grouping")
 colnames(plot5A[[5]]) <- c("CRPS","uDemand","Grouping")
 plot5A    <- rbind(plot5A[[2]],plot5A[[3]],plot5A[[4]],plot5A[[5]],make.row.names = FALSE)
+plot5A$CRPS <- as.numeric(as.character(plot5A$CRPS))
+plot5A$uDemand <- as.numeric(as.character(plot5A$uDemand))
 
-#ggplot not working
-
-ggplot5A  <- ggplot(plot5A, aes(CRPS,uDemand, color=Grouping)) + geom_point()
-  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_line(colour = "gray90"),
-                     panel.grid.minor = element_line(colour = "gray95"), axis.line = element_line(colour = "gray60")) +
-  scale_color_manual(values=c("gray80", "dodgerblue3", "firebrick")) +
-  theme(text=element_text(family="Times",size=18)) +
+ggplot5A  <- ggplot(plot5A, aes(CRPS,uDemand, color=Grouping, shape=Grouping)) + geom_point() +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
+  theme(text=element_text(family="Times"),
+        axis.text.x = element_text(color="black",size=18),
+        axis.text.y = element_text(color="black",size=18),  
+        axis.title.x = element_text(color="black",size=18),
+        axis.title.y = element_text(color="black",size=18),
+        legend.title = element_blank(),
+        legend.text = element_text(color="black",size=14)) +
+  scale_color_manual(values=c("gray80", "black", "black", "black")) +
   scale_y_continuous(name="Mean Demand (in kWh)") +
-  scale_x_continuous(name="Forecast Uncertainty (in average kWh CRPS)",
-                     limits=c(0, 0.1),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
+  scale_x_continuous(name="CRPS (kW)",
+                     limits=c(0, 0.08),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
   theme(legend.position=c(0.8,0.7))
 ggplot5A
-
-
-
-plt3nam <- "optgrp_01.pdf"
-# plot3i  <- readRDS("smuf_run_0624_defheurd.rds")
-plot3i  <- readRDS("smuf_run_0704_defheur_med01.rds")
-myleg   <- c("Random","SDKD","SDAG","CVKD","CVAG")
-fx_plt_rnd_vs_opt(plot3i[[2]][[length(plot3i[[2]])]][[2]],c(0,0.05),c(0,27),myleg,"CRPS")
-plot3   <- cbind(as.data.frame(plot3i[[2]][[1]][[2]][[2]]),myleg[1])
-colnames(plot3) <- c("CRPS","uDemand","Grouping")
-niceleg <- c("Optimal (st. dev.)","","Optimal (cross-val.)")
-for (i in c(4,6)) {
-  temp  <- cbind(as.data.frame(plot3i[[2]][[1]][[2]][[i]]),niceleg[(i-3)])
-  colnames(temp) <- c("CRPS","uDemand","Grouping")
-  plot3 <- rbind(plot3,temp)
-}
-ggplot3 <- ggplot(plot3, aes(CRPS,uDemand, color=Grouping)) + geom_point() +
-  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_line(colour = "gray90"),
-                     panel.grid.minor = element_line(colour = "gray95"), axis.line = element_line(colour = "gray60")) +
-  scale_color_manual(values=c("gray80", "dodgerblue3", "firebrick")) +
-  theme(text=element_text(family="Times",size=18)) +
-  scale_y_continuous(name="Mean Demand (in kWh)") +
-  scale_x_continuous(name="Forecast Uncertainty (in average kWh CRPS)",
-                     limits=c(0, 0.1),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
-  theme(legend.position=c(0.8,0.7))
-ggplot3
-# ggsave(paste(Sys.Date(),plt3nam,sep="_"),path="./Plots")
-
-
-
-
-#===========================================
-saveRDS(list(plot1,plot2,plot3),file="smuf_aux_plots.rds")
