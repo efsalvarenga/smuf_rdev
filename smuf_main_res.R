@@ -13,7 +13,7 @@ library(dplyr)
 library(magrittr)
 library(data.table)
 
-setwd("~/GitRepos/smuf_rdev")
+# setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
 {
   # wm01_00       <- readRDS("smuf_import-complete.rds")
@@ -148,28 +148,28 @@ ggplot3rs <- ggplot(plot3rs, aes(V1,uDemand)) + geom_point(size=4,col='gray30') 
   scale_x_continuous(expand = c(0, 0),limits = c(0.005,0.055)) + scale_y_continuous(expand = c(0, 0),limits=c(0,26))
 ggplot3rs
 
-plt4nam <- "benchKDxAG.pdf"
-plot4i  <- readRDS("smuf_temp_compare.rds")
-# niceleg <- c(paste('KDE',c(4,24),'h window'),paste('ARMA-GARCH GoF',c(NA,0.01,0.05,0.2,0.5,1.0,2.0)))
-plot4   <- plot4i[[1]]
-# rownames(plot4) <- niceleg
-plot4   <- melt(t(plot4), id=colnames(t(plot4)))
-plot4[,1]       <- as.numeric(sub(".*\\.", "", plot4[,1]))
-colnames(plot4) <- c('ahead_t','Method','CRPS')
-ggplot4 <- ggplot(plot4, aes(ahead_t,CRPS, linetype=Method)) + geom_line() +
-    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_line(colour = "gray90"),
-                     panel.grid.minor = element_line(colour = "gray95"), axis.line = element_line(colour = "gray60")) +
-    theme(text=element_text(family="Times",size=18)) +
-    theme(text=element_text(family="Times"),
-          axis.text.x = element_text(color="black",size=18),
-          axis.text.y = element_text(color="black",size=18),  
-          axis.title.x = element_text(color="black",size=18),
-          axis.title.y = element_text(color="black",size=18),
-          legend.text = element_text(color="black",size=18)) +
-    scale_x_continuous(name="Time ahead forecast (h)") +
-    scale_y_continuous(limits=c(0.09, 0.121))#,breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
-ggplot4
-# ggsave(paste(Sys.Date(),plt4nam,sep="_"),path="./Plots")
+# plt4nam <- "benchKDxAG.pdf"
+# plot4i  <- readRDS("smuf_temp_compare.rds")
+# # niceleg <- c(paste('KDE',c(4,24),'h window'),paste('ARMA-GARCH GoF',c(NA,0.01,0.05,0.2,0.5,1.0,2.0)))
+# plot4   <- plot4i[[1]]
+# # rownames(plot4) <- niceleg
+# plot4   <- melt(t(plot4), id=colnames(t(plot4)))
+# plot4[,1]       <- as.numeric(sub(".*\\.", "", plot4[,1]))
+# colnames(plot4) <- c('ahead_t','Method','CRPS')
+# ggplot4 <- ggplot(plot4, aes(ahead_t,CRPS, linetype=Method)) + geom_line() +
+#     theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_line(colour = "gray90"),
+#                      panel.grid.minor = element_line(colour = "gray95"), axis.line = element_line(colour = "gray60")) +
+#     theme(text=element_text(family="Times",size=18)) +
+#     theme(text=element_text(family="Times"),
+#           axis.text.x = element_text(color="black",size=18),
+#           axis.text.y = element_text(color="black",size=18),  
+#           axis.title.x = element_text(color="black",size=18),
+#           axis.title.y = element_text(color="black",size=18),
+#           legend.text = element_text(color="black",size=18)) +
+#     scale_x_continuous(name="Time ahead forecast (h)") +
+#     scale_y_continuous(limits=c(0.09, 0.121))#,breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
+# ggplot4
+# # ggsave(paste(Sys.Date(),plt4nam,sep="_"),path="./Plots")
 
 plt4snam <- "benchKDxAG_simple.pdf"
 plot4s <- readRDS('smuf_compare_0831_KD-AG_large_mult-gofmin_cleaned.rds')
@@ -196,11 +196,61 @@ ggplot4s <- ggplot(plot4s, aes(ahead_t,CRPS, colour=Method, linetype=Method)) + 
 ggplot4s
 # ggsave(paste(Sys.Date(),plt4snam,sep="_"),path="./Plots")
 
-plot5  <- readRDS("smuf_run_0801_defheur_cv1d_summary.rds")
-colMeans(plot5[[3]])
-colMeans(plot5[[4]])
-colMeans(plot5[[5]])
-colMeans(plot5[[6]])
+plt5nam_A <- "seaf24.pdf"
+plot5A    <- readRDS("smuf_runf_0919_KO_seaf10-summary.rds")
+myleg     <- c("Random","SDEV","SEAF_pure","OptSEAF+minEi")
+plot5A[[2]] <- as.data.frame(cbind(plot5A[[2]],myleg[1]))
+colnames(plot5A[[2]]) <- c("CRPS","uDemand","Grouping")
+plot5A[[3]] <- as.data.frame(cbind(plot5A[[3]],myleg[2]))
+plot5A[[4]] <- as.data.frame(cbind(plot5A[[4]],myleg[3]))
+plot5A[[5]] <- as.data.frame(cbind(plot5A[[5]],myleg[4]))
+colnames(plot5A[[2]]) <- c("CRPS","uDemand","Grouping")
+colnames(plot5A[[3]]) <- c("CRPS","uDemand","Grouping")
+colnames(plot5A[[4]]) <- c("CRPS","uDemand","Grouping")
+colnames(plot5A[[5]]) <- c("CRPS","uDemand","Grouping")
+plot5A    <- rbind(plot5A[[2]],plot5A[[3]],plot5A[[4]],plot5A[[5]],make.row.names = FALSE)
+
+#ggplot not working
+
+ggplot5A  <- ggplot(plot5A, aes(CRPS,uDemand, color=Grouping)) + geom_point()
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_line(colour = "gray90"),
+                     panel.grid.minor = element_line(colour = "gray95"), axis.line = element_line(colour = "gray60")) +
+  scale_color_manual(values=c("gray80", "dodgerblue3", "firebrick")) +
+  theme(text=element_text(family="Times",size=18)) +
+  scale_y_continuous(name="Mean Demand (in kWh)") +
+  scale_x_continuous(name="Forecast Uncertainty (in average kWh CRPS)",
+                     limits=c(0, 0.1),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
+  theme(legend.position=c(0.8,0.7))
+ggplot5A
+
+
+
+plt3nam <- "optgrp_01.pdf"
+# plot3i  <- readRDS("smuf_run_0624_defheurd.rds")
+plot3i  <- readRDS("smuf_run_0704_defheur_med01.rds")
+myleg   <- c("Random","SDKD","SDAG","CVKD","CVAG")
+fx_plt_rnd_vs_opt(plot3i[[2]][[length(plot3i[[2]])]][[2]],c(0,0.05),c(0,27),myleg,"CRPS")
+plot3   <- cbind(as.data.frame(plot3i[[2]][[1]][[2]][[2]]),myleg[1])
+colnames(plot3) <- c("CRPS","uDemand","Grouping")
+niceleg <- c("Optimal (st. dev.)","","Optimal (cross-val.)")
+for (i in c(4,6)) {
+  temp  <- cbind(as.data.frame(plot3i[[2]][[1]][[2]][[i]]),niceleg[(i-3)])
+  colnames(temp) <- c("CRPS","uDemand","Grouping")
+  plot3 <- rbind(plot3,temp)
+}
+ggplot3 <- ggplot(plot3, aes(CRPS,uDemand, color=Grouping)) + geom_point() +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_line(colour = "gray90"),
+                     panel.grid.minor = element_line(colour = "gray95"), axis.line = element_line(colour = "gray60")) +
+  scale_color_manual(values=c("gray80", "dodgerblue3", "firebrick")) +
+  theme(text=element_text(family="Times",size=18)) +
+  scale_y_continuous(name="Mean Demand (in kWh)") +
+  scale_x_continuous(name="Forecast Uncertainty (in average kWh CRPS)",
+                     limits=c(0, 0.1),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
+  theme(legend.position=c(0.8,0.7))
+ggplot3
+# ggsave(paste(Sys.Date(),plt3nam,sep="_"),path="./Plots")
+
+
 
 
 #===========================================
