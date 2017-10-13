@@ -10,6 +10,7 @@
 library(ggplot2)
 library(reshape)
 library(dplyr)
+library(tidyr)
 library(magrittr)
 library(data.table)
 
@@ -231,3 +232,92 @@ ggplot5A  <- ggplot(plot5A, aes(CRPS,uDemand, color=Grouping, shape=Grouping)) +
                      limits=c(0, 0.08),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
   theme(legend.position=c(0.8,0.7))
 ggplot5A
+
+plot5B    <- readRDS("smuf_runf_0919_KO_base_cont_real.rds")
+plot5Brnd <- plot5B[[2]][[1]][[2]][[2]]
+plot5Bsd  <- plot5B[[2]][[1]][[2]][[3]]
+plot5Bcv  <- plot5B[[2]][[1]][[2]][[4]]
+for (i in c(2:10)) {
+  plot5Brnd <- plot5Brnd + plot5B[[2]][[i]][[2]][[2]]
+  plot5Bsd  <- plot5Bsd  + plot5B[[2]][[i]][[2]][[3]]
+  plot5Bcv  <- plot5Bcv  + plot5B[[2]][[i]][[2]][[4]]
+}
+plot5Brnd <- plot5Brnd/10
+plot5Bsd  <- plot5Bsd/10
+plot5Bcv  <- plot5Bcv/10
+correc <- (max(plot5Brnd[,2])-min(plot5Brnd[,2]))/16/2
+corvec <- runif(1600,-correc,correc)
+plot5Brnd[,2] <- plot5Brnd[,2] + corvec
+myleg     <- c("Random","Standard Deviation","Validation")
+plot5Brnd <- as.data.frame(cbind(plot5Brnd,myleg[1]))
+plot5Bsd  <- as.data.frame(cbind(plot5Bsd,myleg[2]))
+plot5Bcv  <- as.data.frame(cbind(plot5Bcv,myleg[3]))
+colnames(plot5Brnd) <- c("CRPS","uDemand","Grouping")
+colnames(plot5Bsd)  <- c("CRPS","uDemand","Grouping")
+colnames(plot5Bcv)  <- c("CRPS","uDemand","Grouping")
+plot5B      <- rbind(plot5Brnd,plot5Bsd,plot5Bcv,make.row.names = FALSE)
+plot5B$CRPS <- as.numeric(as.character(plot5B$CRPS))
+plot5B$uDemand <- as.numeric(as.character(plot5B$uDemand))
+
+ggplot5B  <- ggplot(plot5B, aes(CRPS,uDemand, color=Grouping, shape=Grouping)) + geom_point() +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
+  theme(text=element_text(family="Times"),
+        axis.text.x = element_text(color="black",size=18),
+        axis.text.y = element_text(color="black",size=18),  
+        axis.title.x = element_text(color="black",size=18),
+        axis.title.y = element_text(color="black",size=18),
+        legend.title = element_blank(),
+        legend.text = element_text(color="black",size=14)) +
+  scale_color_manual(values=c("gray80", "black", "black")) +
+  scale_y_continuous(name="Mean Demand (in kWh)") +
+  scale_x_continuous(name="CRPS (kW)",
+                     limits=c(0, 0.08),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
+  theme(legend.position=c(0.8,0.7))
+ggplot5B
+
+plot5AB <- plot5A %>%
+  filter(Grouping %in% c("Seasonal Signal","Seas. & Remainder Signal"))
+plot5AB <- rbind(plot5B,plot5AB)
+ggplot5AB  <- ggplot(plot5AB, aes(CRPS,uDemand, color=Grouping, shape=Grouping)) + geom_point() +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
+  theme(text=element_text(family="Times"),
+        axis.text.x = element_text(color="black",size=18),
+        axis.text.y = element_text(color="black",size=18),  
+        axis.title.x = element_text(color="black",size=18),
+        axis.title.y = element_text(color="black",size=18),
+        legend.title = element_blank(),
+        legend.text = element_text(color="black",size=14)) +
+  scale_color_manual(values=c("gray80", rep("black", 4))) +
+  scale_y_continuous(name="Mean Demand (in kWh)") +
+  scale_x_continuous(name="CRPS (kW)",
+                     limits=c(0, 0.08),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
+  theme(legend.position=c(0.8,0.7))
+ggplot5AB
+
+
+plot7     <- readRDS('smuf_runf_0919_KO_randomlines.rds')
+plot7     <- t(plot7)
+rnd.names <- c(1,2,3,4,5,10,20,30,40,50,100,150,200)
+plot7     <- cbind(1:72,plot7)
+colnames(plot7) <- c('ahead_t',rnd.names)
+plot7     <- as.data.frame(plot7)
+plot7     <- plot7 %>% gather(Aggregation,CRPS,-ahead_t)
+plot7s    <- plot7 %>% filter (Aggregation %in% c(1,10,100,200))
+
+ggplot7 <- ggplot(plot7s, aes(ahead_t,CRPS, colour=Aggregation, linetype=Aggregation)) + geom_line() +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
+  theme(text=element_text(family="Times"),
+        axis.text.x = element_text(color="black",size=18),
+        axis.text.y = element_text(color="black",size=18),  
+        axis.title.x = element_text(color="black",size=18),
+        axis.title.y = element_text(color="black",size=18),
+        legend.title = element_text(color="black",size=14),
+        legend.text = element_text(color="black",size=14)) +
+  theme(legend.position=c(0.95,0.7)) + 
+  scale_x_continuous(name="Forecast lead time (h)") +
+  scale_y_continuous(name="CRPS (kW)",limits=c(0, 0.115)) + 
+  scale_colour_grey()
+ggplot7
