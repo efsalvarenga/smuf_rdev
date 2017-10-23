@@ -29,7 +29,7 @@
   # Integrated Parameters
   #===========================================
   #cus_list to 1000, stp to 150 (detectcores), hrz_lim larger (0:167)*113), turn on CV
-  cus_list      <- seq(1,50)
+  cus_list      <- seq(1,200)
   frontierstp   <- 16             # Number of demand bins (Stepwise frontier for portfolio optimisation)
   frontierexp   <- 1                     # Exponentiality of frontier steps
   max.gen       <- 100                     # For genetic opt
@@ -38,7 +38,7 @@
   win_selec     <- win_size[2]
   cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
   ahead_t       <- seq(1,72)               # Up to s02
-  hrz_lim       <- seq(1,167)*113            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
+  hrz_lim       <- seq(1,50)*29            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
   in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
   crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
   crossvalstps  <- 16                      # Steps used for multiple crossvalidation (Only KDE)
@@ -75,7 +75,7 @@
     # Random groups & evaluation
     #===========================================
     cat("[Rnd] ")
-    rnd.names <- c(5,25,50) #c(2,3,4,5,10,20,30,40,50,100,150,200)
+    rnd.names <- c(2,3,4,5,10,20,30,40,50,100,150,200)
     for (c in rnd.names){
       cat(c," ")
       matmult <- matrix(0,length(cus_list),length(cus_list))
@@ -119,7 +119,7 @@
     print(proc.time() - ptm)
   }
   rndres_sum <- Reduce("+", rndres_big) / length(rndres_big)
-  fx_plt_mymat(rndres_sum,c(0,0.12))
+  fx_plt_mymat(rndres_sum,c(0,0.5))
   legend('topright', inset=c(0,0), legend = c(1,rnd.names),
          lty=1, col=rainbow(1+length(rnd.names)), bty='n', cex=.75, title="Method")    
   
