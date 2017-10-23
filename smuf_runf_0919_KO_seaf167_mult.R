@@ -51,7 +51,7 @@ gof.min       <- 0.05                    # GoF crossover value to change ARMA-GA
 #===========================================
 bighlpopgr <- list()
 bighlpcrps <- list()
-myleg = c("Random","sdev","seaf_pure","seaf+minEi")
+myleg = c("Random","sdev","seaf_pure","SEAF0.25","SEAF0.50","SEAF0.75")
 
 for (h in hrz_lim){
   ptm    <- proc.time()
@@ -210,7 +210,7 @@ for (i in 2:length(bighlpcrps)){
   }
 }
 for (j in 1:(length(myleg)+1)){
-  biglpcrpsavg[[j]]=biglpcrpsavg[[j]]/length(hrz_lim)
+  biglpcrpsavg[[j]]=biglpcrpsavg[[j]]/length(bighlpcrps)
 }
 fx_plt_rnd_vs_opt(biglpcrpsavg,c(0,0.1),c(0,sum(wv45)),myleg,"CRPS")
 
