@@ -38,7 +38,7 @@
   win_selec     <- win_size[2]
   cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
   ahead_t       <- seq(1,72)               # Up to s02
-  hrz_lim       <- seq(1,50)*29            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
+  hrz_lim       <- seq(1,167)*29            # Rolling forecasts steps {seq(0:167)*113} is comprehensive
   in_sample_fr  <- 1/6                     # Fraction for diving in- and out-sample
   crossvalsize  <- 1                       # Number of weeks in the end of in_sample used for crossvalidation
   crossvalstps  <- 16                      # Steps used for multiple crossvalidation (Only KDE)
