@@ -13,7 +13,7 @@
 #===========================================
 setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
-savfile = "smuf_runf_0919_KO_all-12h.rds"
+savfile = "smuf_runf_0919_KO_all-12h_usearmaT.rds"
 
 wm01_00       <- readRDS("smuf_import-complete.rds")
 importpar     <- readRDS("smuf_import-parameter.rds")
@@ -111,7 +111,7 @@ for (h in hrz_lim){
                             optgrp   <- genoud(fx_optgrp_crps, nvars=nrow(wm01_01), max.generations=max.gen, wait.generations=waitgen,
                                                starting.values=optgrp_sdev[i,], Domains = cbind(c(rep(0,nrow(wm01_01))),c(rep(1,nrow(wm01_01)))),
                                                data.type.int=TRUE,  int.seed=1, print.level=1,
-                                               use_arma=F)
+                                               use_arma=T)
                             if(optgrp$value == 10) {
                               grouped = c(rep(0,nrow(wm01_01)))
                             } else {
