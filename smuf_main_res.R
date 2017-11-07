@@ -422,6 +422,27 @@ ggplot6AB  <- ggplot(plot6AB, aes(CRPS,uDemand, color=Grouping, shape=Grouping))
   theme(legend.position=c(0.8,0.7))
 ggplot6AB
 
+# all12
+plot7    <- readRDS("smuf_runf_0919_KO_all-12h_summary.rds")
+correc <- (max(plot7[[2]][,2])-min(plot7[[2]][,2]))/16/2
+corvec <- runif(1600,-correc,correc)
+plot7[[2]][,2] <- plot7[[2]][,2] + corvec
+myleg     <- c("Random","Standard Deviation","Forecast Validated","Seasonal Signal","Seas. & Remainder Signal")
+plot7[[2]] <- as.data.frame(cbind(plot7[[2]],myleg[1]))
+colnames(plot7[[2]]) <- c("CRPS","uDemand","Grouping")
+plot7[[3]] <- as.data.frame(cbind(plot7[[3]],myleg[2]))
+plot7[[4]] <- as.data.frame(cbind(plot7[[4]],myleg[3]))
+plot7[[5]] <- as.data.frame(cbind(plot7[[5]],myleg[4]))
+colnames(plot7[[2]]) <- c("CRPS","uDemand","Grouping")
+colnames(plot7[[3]]) <- c("CRPS","uDemand","Grouping")
+colnames(plot7[[4]]) <- c("CRPS","uDemand","Grouping")
+colnames(plot7[[5]]) <- c("CRPS","uDemand","Grouping")
+plot7    <- rbind(plot7[[2]],plot7[[3]],plot7[[4]],plot7[[5]],make.row.names = FALSE)
+plot7$CRPS <- as.numeric(as.character(plot7$CRPS))
+plot7$uDemand <- as.numeric(as.character(plot7$uDemand))
+
+
+
 
 ggplot5AB
 ggplot6AB
@@ -439,16 +460,16 @@ plot6AB %>%
 
 
 # random lines
-plot7     <- readRDS('smuf_runf_0919_KO_randomlines.rds')
-plot7     <- t(plot7)
+plot11     <- readRDS('smuf_runf_0919_KO_randomlines.rds')
+plot11     <- t(plot11)
 rnd.names <- c(1,2,3,4,5,10,20,30,40,50,100,150,200)
-plot7     <- cbind(1:72,plot7)
-colnames(plot7) <- c('ahead_t',rnd.names)
-plot7     <- as.data.frame(plot7)
-plot7     <- plot7 %>% gather(Aggregation,CRPS,-ahead_t)
-plot7s    <- plot7 %>% filter (Aggregation %in% c(1,10,100,200))
+plot11     <- cbind(1:72,plot11)
+colnames(plot11) <- c('ahead_t',rnd.names)
+plot11     <- as.data.frame(plot11)
+plot11     <- plot11 %>% gather(Aggregation,CRPS,-ahead_t)
+plot11s    <- plot11 %>% filter (Aggregation %in% c(1,10,100,200))
 
-ggplot7 <- ggplot(plot7s, aes(ahead_t,CRPS, colour=Aggregation, linetype=Aggregation)) + geom_line() +
+ggplot11 <- ggplot(plot11s, aes(ahead_t,CRPS, colour=Aggregation, linetype=Aggregation)) + geom_line() +
   theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                      panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
   theme(text=element_text(family="Times"),
@@ -462,4 +483,4 @@ ggplot7 <- ggplot(plot7s, aes(ahead_t,CRPS, colour=Aggregation, linetype=Aggrega
   scale_x_continuous(name="Forecast lead time (h)") +
   scale_y_continuous(name="CRPS (kW)",limits=c(0, 0.115)) + 
   scale_colour_grey()
-ggplot7
+ggplot11
