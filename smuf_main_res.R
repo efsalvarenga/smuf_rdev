@@ -192,7 +192,7 @@ setkey(dt,uDemand)
 plot3rs <- as.data.frame(dt[,mean(CRPS),by=uDemand])
 plot3rs$uDemand <- plot3rs$uDemand / 0.4
 plot3rs[1,1]=1.25
-ggplot3rs <- ggplot(plot3rs, aes(V1,uDemand)) + geom_point(size=4,col='gray30') +
+ggplot3rs <- ggplot(plot3rs, aes(V1,uDemand)) + geom_point(col='gray30') +
   theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                      panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
   theme(text=element_text(family="Times"),
