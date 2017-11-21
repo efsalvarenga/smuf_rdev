@@ -51,7 +51,7 @@ gof.min       <- 0.05                    # GoF crossover value to change ARMA-GA
 #===========================================
 bighlpopgr <- list()
 bighlpcrps <- list()
-myleg = c("Random","sdev","seaf_pure","seaf+minEi")
+myleg = c("Random","sdev","cv","seaf_pure","seaf+minEi")
 
 for (h in hrz_lim){
   ptm    <- proc.time()
@@ -167,7 +167,7 @@ for (h in hrz_lim){
   res_sfmE     <- fx_applgrp(optgrp_sfmE,wv46,wm01_01,fx_int_fcstgeneric_kdss,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh,crossvalfocus)
   
   bighlpcrps   <- fx_sav_optress(c("sdev+2seas",h,frontierstp,length(cus_list),crossvalstps,armalags,crossvalfocus,runkey),
-                                 list(c(h,frontierstp,length(cus_list)),cbind(cr01rnd,wv45rnd),res_sdev,res_sfna,res_sfmE))
+                                 list(c(h,frontierstp,length(cus_list)),cbind(cr01rnd,wv45rnd),res_sdev,res_cv7d,res_sfna,res_sfmE))
   
   saveRDS(list(bighlpopgr,bighlpcrps),  file=savfile)
   
