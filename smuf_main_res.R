@@ -502,3 +502,19 @@ ggplot11 <- ggplot(plot11s, aes(ahead_t,CRPS, colour=Aggregation, linetype=Aggre
   scale_y_continuous(name="CRPS (kW)",limits=c(0, 0.115)) + 
   scale_colour_grey()
 ggplot11
+
+# compare cv1d or cv7d
+table01 <- readRDS('smuf_run_0801_defheur_cv1d_summary.rds')
+tb01leg <- c("OptCV7dKD","OptCV1dKD","OptCV7dAG","OptCV1dAG")
+table01[[4]] <- as.data.frame(cbind(table01[[4]],tb01leg[1]))
+table01[[5]] <- as.data.frame(cbind(table01[[5]],tb01leg[2]))
+table01[[6]] <- as.data.frame(cbind(table01[[6]],tb01leg[3]))
+table01[[7]] <- as.data.frame(cbind(table01[[7]],tb01leg[4]))
+table01b     <- rbind(table01[[4]],table01[[5]],table01[[6]],table01[[7]])
+colnames(table01b) <- c("CRPS","uDemand","Grouping")
+table01b$CRPS      <- as.numeric(as.character(table01b$CRPS))
+table01b$uDemand   <- as.numeric(as.character(table01b$uDemand))
+
+table01b %>%
+  group_by(Grouping) %>%
+  summarise(uCRPS = mean(CRPS))
