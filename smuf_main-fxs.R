@@ -536,7 +536,7 @@ fx_applgrp     <- function(optgrp,wv46,wm01_01,fx_to_use,h,in_sample_fr,s01,s02,
   wm01_grpl     <- list(optgrp %*% wm01_01, optgrp)
   wm01_grp      <- wm01_grpl[[1]] / (max(rowSums(wm01_grpl[[2]]),1))
   wl06opt       <- fx_to_use(wm01_grp,h,in_sample_fr,s01,s02,sum_of_h,win_selec,is_wins_weeks,crossvalsize,T,armalags,cross_overh,gof.min)
-  wv45opt       <- as.numeric(rowMeans(wl06opt[[1]]) * rowSums(wm01_grpl[[2]]))
+  wv45opt       <- as.numeric(as.numeric(wl06opt[[1]][,crossvalfocus]) * rowSums(wm01_grpl[[2]]))
   sd01opt       <- as.numeric(fx_sd_mymat(wl06opt[[1]]))
   if(length(crossvalfocus)==2){
     cr01opt       <- rowMeans(wl06opt[[2]][,crossvalfocus[1]:crossvalfocus[2]])
