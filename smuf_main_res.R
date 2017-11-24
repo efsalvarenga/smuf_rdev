@@ -423,7 +423,7 @@ ggplot6AB  <- ggplot(plot6AB, aes(CRPS,uDemand, color=Grouping, shape=Grouping))
 ggplot6AB
 
 # all12
-plot7    <- readRDS("smuf_runf_0919_KO_all-12h_usearmaT_summary.rds")
+plot7    <- readRDS("smuf_runf_1121_KO_all-12h_summary.rds")
 correc <- (max(plot7[[2]][,2])-min(plot7[[2]][,2]))/16/2
 corvec <- runif(1600,-correc,correc)
 plot7[[2]][,2] <- plot7[[2]][,2] + corvec
@@ -459,22 +459,51 @@ ggplot7  <- ggplot(plot7, aes(CRPS,uDemand, color=Grouping, shape=Grouping)) + g
   theme(legend.position=c(0.8,0.7))
 ggplot7
 
+# all04
+plot8    <- readRDS("smuf_runf_1121_KO_all-04h_summary.rds")
+correc <- (max(plot8[[2]][,2])-min(plot8[[2]][,2]))/16/2
+corvec <- runif(1600,-correc,correc)
+plot8[[2]][,2] <- plot8[[2]][,2] + corvec
+myleg     <- c("Random","Standard Deviation","Forecast Validated","Seasonal Signal","Seas. & Remainder Signal")
+plot8[[2]] <- as.data.frame(cbind(plot8[[2]],myleg[1]))
+colnames(plot8[[2]]) <- c("CRPS","uDemand","Grouping")
+plot8[[3]] <- as.data.frame(cbind(plot8[[3]],myleg[2]))
+plot8[[4]] <- as.data.frame(cbind(plot8[[4]],myleg[3]))
+plot8[[5]] <- as.data.frame(cbind(plot8[[5]],myleg[4]))
+plot8[[6]] <- as.data.frame(cbind(plot8[[6]],myleg[5]))
+colnames(plot8[[2]]) <- c("CRPS","uDemand","Grouping")
+colnames(plot8[[3]]) <- c("CRPS","uDemand","Grouping")
+colnames(plot8[[4]]) <- c("CRPS","uDemand","Grouping")
+colnames(plot8[[5]]) <- c("CRPS","uDemand","Grouping")
+colnames(plot8[[6]]) <- c("CRPS","uDemand","Grouping")
+plot8    <- rbind(plot8[[2]],plot8[[3]],plot8[[4]],plot8[[5]],plot8[[6]],make.row.names = FALSE)
+plot8$CRPS <- as.numeric(as.character(plot8$CRPS))
+plot8$uDemand <- as.numeric(as.character(plot8$uDemand))
+ggplot8  <- ggplot(plot8, aes(CRPS,uDemand, color=Grouping, shape=Grouping)) + geom_point() +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
+  theme(text=element_text(family="Times"),
+        axis.text.x = element_text(color="black",size=fontsize),
+        axis.text.y = element_text(color="black",size=fontsize),  
+        axis.title.x = element_text(color="black",size=fontsize),
+        axis.title.y = element_text(color="black",size=fontsize),
+        legend.title = element_blank(),
+        legend.text = element_text(color="black",size=fontsize)) +
+  scale_color_manual(values=c("gray80", rep("black", 4))) +
+  scale_y_continuous(name="Mean Demand (in kWh)") +
+  scale_x_continuous(name="CRPS (kW)",
+                     limits=c(0, 0.08),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
+  theme(legend.position=c(0.8,0.7))
+ggplot8
 
 
-ggplot5AB
-ggplot6AB
-ggplot7
-
-plot5AB %>% #24h
-  group_by(Grouping) %>%
-  summarise(uCRPS = mean(CRPS))
-plot6AB %>% #04h
-  group_by(Grouping) %>%
-  summarise(uCRPS = mean(CRPS))
 plot7 %>% #12h
   group_by(Grouping) %>%
   summarise(uCRPS = mean(CRPS))
 
+plot8 %>% #12h
+  group_by(Grouping) %>%
+  summarise(uCRPS = mean(CRPS))
 
 
 # random lines
@@ -514,7 +543,36 @@ table01b     <- rbind(table01[[4]],table01[[5]],table01[[6]],table01[[7]])
 colnames(table01b) <- c("CRPS","uDemand","Grouping")
 table01b$CRPS      <- as.numeric(as.character(table01b$CRPS))
 table01b$uDemand   <- as.numeric(as.character(table01b$uDemand))
-
 table01b %>%
   group_by(Grouping) %>%
   summarise(uCRPS = mean(CRPS))
+
+# compare seafs
+table02 <- readRDS('smuf_run_0720_defheur_clulight_int01_summary.rds')
+tb02leg <- c("OptSEAF_nf","OptSEAF_sf","OptSEAF_na","OptSEAF_sa")
+table02[[4]] <- as.data.frame(cbind(table02[[4]],tb02leg[1]))
+table02[[5]] <- as.data.frame(cbind(table02[[5]],tb02leg[2]))
+table02[[6]] <- as.data.frame(cbind(table02[[6]],tb02leg[3]))
+table02[[7]] <- as.data.frame(cbind(table02[[7]],tb02leg[4]))
+table02b     <- rbind(table02[[4]],table02[[5]],table02[[6]],table02[[7]])
+colnames(table02b) <- c("CRPS","uDemand","Grouping")
+table02b$CRPS      <- as.numeric(as.character(table02b$CRPS))
+table02b$uDemand   <- as.numeric(as.character(table02b$uDemand))
+table02b %>%
+  group_by(Grouping) %>%
+  summarise(uCRPS = mean(CRPS,na.rm=T))
+
+table03 <- readRDS('smuf_run_0720_defheur_clulight_int02_summary.rds')
+tb03leg <- c("OptSEAF_na","OptSEAF_na02","OptSEAF_na05","OptSEAF_na08")
+table03[[4]] <- as.data.frame(cbind(table03[[4]],tb03leg[1]))
+table03[[5]] <- as.data.frame(cbind(table03[[5]],tb03leg[2]))
+table03[[6]] <- as.data.frame(cbind(table03[[6]],tb03leg[3]))
+table03[[7]] <- as.data.frame(cbind(table03[[7]],tb03leg[4]))
+table03b     <- rbind(table03[[4]],table03[[5]],table03[[6]],table03[[7]])
+colnames(table03b) <- c("CRPS","uDemand","Grouping")
+table03b$CRPS      <- as.numeric(as.character(table03b$CRPS))
+table03b$uDemand   <- as.numeric(as.character(table03b$uDemand))
+table03b %>%
+  group_by(Grouping) %>%
+  summarise(uCRPS = mean(CRPS,na.rm=T))
+
