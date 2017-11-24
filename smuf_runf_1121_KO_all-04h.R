@@ -13,7 +13,7 @@
 #===========================================
 setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
-savfile = "smuf_runf_1121_KO_all-04h.rds"
+savfile = "smuf_runf_1121_KO_all-04h_ws04.rds"
 
 wm01_00       <- readRDS("smuf_import-complete.rds")
 importpar     <- readRDS("smuf_import-parameter.rds")
@@ -33,7 +33,7 @@ frontierexp   <- 1                     # Exponentiality of frontier steps
 max.gen       <- 100                     # For genetic opt
 waitgen       <- 10                      # For genetic opt
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
-win_selec     <- win_size[2]
+win_selec     <- win_size[1]
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1,12)               # Up to s02
 aht_selec     <- 4
