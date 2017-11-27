@@ -423,7 +423,7 @@ ggplot6AB  <- ggplot(plot6AB, aes(CRPS,uDemand, color=Grouping, shape=Grouping))
 ggplot6AB
 
 # all12
-plot7    <- readRDS("smuf_runf_1121_KO_all-12h_ws04_summary.rds")
+{plot7    <- readRDS("smuf_runf_1121_KO_all-12h_ws04_summary.rds")
 correc <- (max(plot7[[2]][,2])-min(plot7[[2]][,2]))/16/2
 corvec <- runif(1600,-correc,correc)
 plot7[[2]][,2] <- plot7[[2]][,2] + corvec
@@ -456,11 +456,11 @@ ggplot7  <- ggplot(plot7, aes(CRPS,uDemand, color=Grouping, shape=Grouping)) + g
   scale_y_continuous(name="Mean Demand (in kWh)") +
   scale_x_continuous(name="CRPS (kW)",
                      limits=c(0, 0.08),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
-  theme(legend.position=c(0.8,0.7))
+  theme(legend.position=c(0.8,0.7))}
 ggplot7
 
 # all04
-plot8    <- readRDS("smuf_runf_1121_KO_all-04h_ws04_summary.rds")
+{plot8    <- readRDS("smuf_runf_1121_KO_all-04h_ws04_summary.rds")
 correc <- (max(plot8[[2]][,2])-min(plot8[[2]][,2]))/16/2
 corvec <- runif(1600,-correc,correc)
 plot8[[2]][,2] <- plot8[[2]][,2] + corvec
@@ -493,9 +493,41 @@ ggplot8  <- ggplot(plot8, aes(CRPS,uDemand, color=Grouping, shape=Grouping)) + g
   scale_y_continuous(name="Mean Demand (in kWh)") +
   scale_x_continuous(name="CRPS (kW)",
                      limits=c(0, 0.08),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
-  theme(legend.position=c(0.8,0.7))
+  theme(legend.position=c(0.8,0.7))}
 ggplot8
 
+# rlx04
+{plot9    <- readRDS("smuf_runf_1121_KO_all-04h_ws04_rlx_summary.rds")
+correc <- (max(plot9[[2]][,2])-min(plot9[[2]][,2]))/16/2
+corvec <- runif(1600,-correc,correc)
+plot9[[2]][,2] <- plot9[[2]][,2] + corvec
+myleg     <- c("Random","Standard Deviation","SD Binary Relaxed")
+plot9[[2]] <- as.data.frame(cbind(plot9[[2]],myleg[1]))
+colnames(plot9[[2]]) <- c("CRPS","uDemand","Grouping")
+plot9[[3]] <- as.data.frame(cbind(plot9[[3]],myleg[2]))
+plot9[[4]] <- as.data.frame(cbind(plot9[[4]],myleg[3]))
+colnames(plot9[[2]]) <- c("CRPS","uDemand","Grouping")
+colnames(plot9[[3]]) <- c("CRPS","uDemand","Grouping")
+colnames(plot9[[4]]) <- c("CRPS","uDemand","Grouping")
+plot9    <- rbind(plot9[[2]],plot9[[3]],plot9[[4]],make.row.names = FALSE)
+plot9$CRPS <- as.numeric(as.character(plot9$CRPS))
+plot9$uDemand <- as.numeric(as.character(plot9$uDemand))
+ggplot9  <- ggplot(plot9, aes(CRPS,uDemand, color=Grouping, shape=Grouping)) + geom_point() +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
+  theme(text=element_text(family="Times"),
+        axis.text.x = element_text(color="black",size=fontsize),
+        axis.text.y = element_text(color="black",size=fontsize),  
+        axis.title.x = element_text(color="black",size=fontsize),
+        axis.title.y = element_text(color="black",size=fontsize),
+        legend.title = element_blank(),
+        legend.text = element_text(color="black",size=fontsize)) +
+  scale_color_manual(values=c("gray80", rep("black", 4))) +
+  scale_y_continuous(name="Mean Demand (in kWh)") +
+  scale_x_continuous(name="CRPS (kW)",
+                     limits=c(0, 0.08),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
+  theme(legend.position=c(0.8,0.7))}
+ggplot9
 
 plot7 %>% #12h
   group_by(Grouping) %>%
@@ -505,6 +537,9 @@ plot8 %>% #12h
   group_by(Grouping) %>%
   summarise(uCRPS = mean(CRPS))
 
+plot9 %>% #12h
+  group_by(Grouping) %>%
+  summarise(uCRPS = mean(CRPS))
 
 # random lines
 plot11     <- readRDS('smuf_runf_0919_KO_randomlines.rds')
