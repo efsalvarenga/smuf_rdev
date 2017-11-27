@@ -423,7 +423,7 @@ ggplot6AB  <- ggplot(plot6AB, aes(CRPS,uDemand, color=Grouping, shape=Grouping))
 ggplot6AB
 
 # all12
-plot7    <- readRDS("smuf_runf_1121_KO_all-12h_summary.rds")
+plot7    <- readRDS("smuf_runf_1121_KO_all-12h_ws04_summary.rds")
 correc <- (max(plot7[[2]][,2])-min(plot7[[2]][,2]))/16/2
 corvec <- runif(1600,-correc,correc)
 plot7[[2]][,2] <- plot7[[2]][,2] + corvec
@@ -460,7 +460,7 @@ ggplot7  <- ggplot(plot7, aes(CRPS,uDemand, color=Grouping, shape=Grouping)) + g
 ggplot7
 
 # all04
-plot8    <- readRDS("smuf_runf_1121_KO_all-04h_summary.rds")
+plot8    <- readRDS("smuf_runf_1121_KO_all-04h_ws04_summary.rds")
 correc <- (max(plot8[[2]][,2])-min(plot8[[2]][,2]))/16/2
 corvec <- runif(1600,-correc,correc)
 plot8[[2]][,2] <- plot8[[2]][,2] + corvec
