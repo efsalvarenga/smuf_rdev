@@ -13,7 +13,7 @@
 #===========================================
 setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
-savfile = "smuf_runf_1121_IR_sd-04h_ws04.rds"
+savfile = "smuf_runf_1121_IR_sd-04h_ws24.rds"
 
 wm01_00       <- readRDS("smuf_import-completeIRhour.rds")
 wm01_00       <- wm01_00[,2329:6744]   # removing big gap on dataset
@@ -34,7 +34,7 @@ frontierexp   <- 1                     # Exponentiality of frontier steps
 max.gen       <- 100                     # For genetic opt
 waitgen       <- 10                      # For genetic opt
 win_size      <- c(4,24)                 # Small and large win_size (select only 2)
-win_selec     <- win_size[1]
+win_selec     <- win_size[2]
 cross_overh   <- 4                       # Cross-over forced for fx_fcst_kds_quickvector
 ahead_t       <- seq(1,12)               # Up to s02
 aht_selec     <- 4
@@ -134,4 +134,4 @@ for (j in 3:(length(myleg)+1)){
   cat('\n',myleg[(j-1)],' ',mean(biglpcrpsavg[[j]][,1],na.rm=T))
 }
 
-saveRDS(biglpcrpsavg,  file=paste("summary_",savfile,sep=""))
+saveRDS(biglpcrpsavg,  file=paste(strsplit(savfile, "[.]")[[1]][1],"_summary.rds",sep=""))

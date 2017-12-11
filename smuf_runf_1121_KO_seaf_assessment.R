@@ -225,4 +225,4 @@ for (j in 3:(length(myleg)+1)){
   cat('\n',myleg[(j-1)],' ',mean(biglpcrpsavg[[j]][,1],na.rm=T))
 }
 
-saveRDS(biglpcrpsavg,  file=paste("summary_",savfile,sep=""))
+saveRDS(biglpcrpsavg,  file=paste(strsplit(savfile, "[.]")[[1]][1],"_summary.rds",sep=""))
