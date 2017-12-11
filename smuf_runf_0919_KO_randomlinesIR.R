@@ -75,7 +75,7 @@
     # Random groups & evaluation
     #===========================================
     cat("[Rnd] ")
-    rnd.names <- c(2,3,4,5,10,20,30,40,50,100,150,200)
+    rnd.names <- c(10,100,200)
     for (c in rnd.names){
       cat(c," ")
       matmult <- matrix(0,length(cus_list),length(cus_list))
