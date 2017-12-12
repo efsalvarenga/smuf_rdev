@@ -101,7 +101,7 @@ for (h in hrz_lim){
                              grouped
                            }
   bighlpopgr   <- fx_sav_optgrps(c("sdev",h,frontierstp,length(cus_list),crossvalstps,armalags,runkey),optgrp_sdev)
-  res_sdev     <- fx_applgrp(optgrp_sdev,wv46,wm01_01,fx_int_fcstgeneric_kdss2,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh,crossvalfocus)
+  res_sdev     <- fx_applgrp(optgrp_sdev,wv46,wm01_01,fx_int_fcstgeneric_kdss,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh,crossvalfocus)
 
   cat("[OptCV7d] ")
   optgrp_cv7d <- foreach (i = 1:frontierstp,
@@ -121,7 +121,7 @@ for (h in hrz_lim){
                             grouped
                           }
   bighlpopgr   <- fx_sav_optgrps(c("cv7dag",h,frontierstp,length(cus_list),crossvalstps,armalags,crossvalfocus,runkey),optgrp_cv7d)
-  res_cv7d     <- fx_applgrp(optgrp_cv7d,wv46,wm01_01,fx_int_fcstgeneric_kdss2,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh,crossvalfocus)
+  res_cv7d     <- fx_applgrp(optgrp_cv7d,wv46,wm01_01,fx_int_fcstgeneric_kdss,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh,crossvalfocus)
   
   wm13seaf     <- as.matrix(wl06[[4]])
   wm14seaf     <- as.matrix(wl06[[3]])
@@ -144,7 +144,7 @@ for (h in hrz_lim){
                              grouped
                            }
   bighlpopgr   <- fx_sav_optgrps(c("sfna",h,frontierstp,length(cus_list),crossvalstps,armalags,crossvalfocus,runkey),optgrp_sfna)
-  res_sfna     <- fx_applgrp(optgrp_sfna,wv46,wm01_01,fx_int_fcstgeneric_kdss2,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh,crossvalfocus)
+  res_sfna     <- fx_applgrp(optgrp_sfna,wv46,wm01_01,fx_int_fcstgeneric_kdss,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh,crossvalfocus)
   
   cat("[OptSEAF+minEi] ")
   optgrp_sfmE  <- foreach (i = 1:frontierstp,
@@ -165,7 +165,7 @@ for (h in hrz_lim){
                                grouped
                              }
   bighlpopgr   <- fx_sav_optgrps(c("sfmE",h,frontierstp,length(cus_list),crossvalstps,armalags,crossvalfocus,runkey),optgrp_sfmE)
-  res_sfmE     <- fx_applgrp(optgrp_sfmE,wv46,wm01_01,fx_int_fcstgeneric_kdss2,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh,crossvalfocus)
+  res_sfmE     <- fx_applgrp(optgrp_sfmE,wv46,wm01_01,fx_int_fcstgeneric_kdss,h,in_sample_fr,s01,s02,sum_of_h,win_size,is_wins_weeks,crossvalsize,armalags,cross_overh,crossvalfocus)
   
   bighlpcrps   <- fx_sav_optress(c("sdev+2seas",h,frontierstp,length(cus_list),crossvalstps,armalags,crossvalfocus,runkey),
                                  list(c(h,frontierstp,length(cus_list)),cbind(cr01rnd,wv45rnd),res_sdev,res_cv7d,res_sfna,res_sfmE))
