@@ -200,7 +200,7 @@ ggplot3rs <- ggplot(plot3rs, aes(V1,uDemand)) + geom_point(col='gray30') +
         axis.text.y = element_text(color="black",size=fontsize),
         axis.title.x = element_text(color="black",size=fontsize),
         axis.title.y = element_text(color="black",size=fontsize)) +
-  labs(x = "CRPS (in kWh)", y = "Mean Demand (kWh)") +
+  labs(x = "CRPS (kWh)", y = "Mean Demand (kWh)") +
   scale_x_continuous(expand = c(0, 0),limits = c(0.005,0.055)) + scale_y_continuous(expand = c(0, 0),limits=c(0,26))
 ggplot3rs
 
