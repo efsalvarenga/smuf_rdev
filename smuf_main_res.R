@@ -192,39 +192,51 @@ plot3r$CRPS <- plot3r$CRPS * 1000
 # setkey(dt,uDemand)
 # plot3rs <- as.data.frame(dt[,mean(CRPS),by=uDemand])
 # plot3rs$uDemand <- plot3rs$uDemand / 0.4
+# plot3r$uDemand <- plot3r$uDemand / 0.4
 # plot3rs[1,1]=1.25
 
-ggplot3rs <- ggplot(plot3r, aes(CRPS,uDemand)) + geom_point(col='gray80') +
-  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
-  theme(text=element_text(family="Times"),
+plot3r %>%
+  filter(uDemand < 1.25) %>%
+  filter(CRPS < 18) -> plot3rf1
+plot3r %>%
+  filter(uDemand < 2.5) %>%
+  filter(CRPS < 14.2) -> plot3rf2
+plot3r %>%
+  filter(uDemand < 5) %>%
+  filter(CRPS < 11.1) -> plot3rf3
+plot3r %>%
+  filter(uDemand < 10) %>%
+  filter(CRPS < 8) -> plot3rf4
+plot3r %>%
+  filter(uDemand < 15) %>%
+  filter(CRPS < 7) -> plot3rf5
+plot3r %>%
+  filter(uDemand > 20) %>%
+  filter(CRPS < 7) -> plot3rf6
+
+plot3rf <- rbind(plot3rf1,plot3rf2,plot3rf3,plot3rf4,plot3rf5,plot3rf6)
+plot3rf$Grouping <- 'Frontier'
+
+plot3rt <- rbind(plot3r,plot3rf)
+
+ggplot3rs <- ggplot(plot3rt, aes(CRPS,uDemand, color=Grouping)) + geom_point() +
+  theme_bw() +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(colour = "gray60"),
+        text=element_text(family="Times"),
+        legend.position = 'none',
         axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks.x = element_blank(),
         axis.ticks.y = element_blank(),
         axis.title.x = element_text(color="black",size=fontsize),
         axis.title.y = element_text(color="black",size=fontsize)) +
+  scale_color_manual(values=c("gray80","black")) +
   scale_y_continuous(name="Energy Demand") +
   scale_x_continuous(name="Risk", limits=c(0, 80))
 ggplot3rs
-
-
-
-ggplot7  <- ggplot(plot7, aes(CRPS,uDemand, color=Grouping, shape=Grouping)) + geom_point() +
-  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
-  theme(text=element_text(family="Times"),
-        axis.text.x = element_text(color="black",size=fontsize),
-        axis.text.y = element_text(color="black",size=fontsize),  
-        axis.title.x = element_text(color="black",size=fontsize),
-        axis.title.y = element_text(color="black",size=fontsize),
-        legend.title = element_blank(),
-        legend.text = element_text(color="black",size=fontsize)) +
-  scale_color_manual(values=c("gray80", rep("black", 4))) +
-  scale_y_continuous(name="Mean Demand (in kWh)") +
-  scale_x_continuous(name="CRPS (kW)",
-                     limits=c(0, 0.08),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
-  theme(legend.position=c(0.8,0.7))}
 
 # plt4nam <- "benchKDxAG.pdf"
 # plot4i  <- readRDS("smuf_temp_compare.rds")
