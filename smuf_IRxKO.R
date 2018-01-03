@@ -1,4 +1,5 @@
 library(tidyverse)
+source('smuf_main-fxs.R')
 
 datKO     <- readRDS("smuf_import-complete.rds")
 parKO     <- readRDS("smuf_import-parameter.rds")
