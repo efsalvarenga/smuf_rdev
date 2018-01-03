@@ -186,23 +186,45 @@ colnames(plot3) <- c("CRPS","uDemand","Grouping")
 
 plt3rnam <- "rndgrp_01.pdf"
 plot3r   <- plot3[plot3$Grouping == 'Random',]
-plot3r$uDemand <- round(plot3r$uDemand * 0.4)
-dt <- data.table(plot3r)
-setkey(dt,uDemand)
-plot3rs <- as.data.frame(dt[,mean(CRPS),by=uDemand])
-plot3rs$uDemand <- plot3rs$uDemand / 0.4
-plot3rs[1,1]=1.25
-ggplot3rs <- ggplot(plot3rs, aes(V1,uDemand)) + geom_point(col='gray30') +
+plot3r$CRPS <- plot3r$CRPS * 1000
+# plot3r$uDemand <- round(plot3r$uDemand * 0.4)
+# dt <- data.table(plot3r)
+# setkey(dt,uDemand)
+# plot3rs <- as.data.frame(dt[,mean(CRPS),by=uDemand])
+# plot3rs$uDemand <- plot3rs$uDemand / 0.4
+# plot3rs[1,1]=1.25
+
+ggplot3rs <- ggplot(plot3r, aes(CRPS,uDemand)) + geom_point(col='gray80') +
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
+  theme(text=element_text(family="Times"),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.x = element_text(color="black",size=fontsize),
+        axis.title.y = element_text(color="black",size=fontsize)) +
+  scale_y_continuous(name="Energy Demand") +
+  scale_x_continuous(name="Risk", limits=c(0, 80))
+ggplot3rs
+
+
+
+ggplot7  <- ggplot(plot7, aes(CRPS,uDemand, color=Grouping, shape=Grouping)) + geom_point() +
   theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
                      panel.grid.minor = element_blank(), axis.line = element_line(colour = "gray60")) +
   theme(text=element_text(family="Times"),
         axis.text.x = element_text(color="black",size=fontsize),
-        axis.text.y = element_text(color="black",size=fontsize),
+        axis.text.y = element_text(color="black",size=fontsize),  
         axis.title.x = element_text(color="black",size=fontsize),
-        axis.title.y = element_text(color="black",size=fontsize)) +
-  labs(x = "CRPS (kWh)", y = "Mean Demand (kWh)") +
-  scale_x_continuous(expand = c(0, 0),limits = c(0.005,0.055)) + scale_y_continuous(expand = c(0, 0),limits=c(0,26))
-ggplot3rs
+        axis.title.y = element_text(color="black",size=fontsize),
+        legend.title = element_blank(),
+        legend.text = element_text(color="black",size=fontsize)) +
+  scale_color_manual(values=c("gray80", rep("black", 4))) +
+  scale_y_continuous(name="Mean Demand (in kWh)") +
+  scale_x_continuous(name="CRPS (kW)",
+                     limits=c(0, 0.08),breaks=seq(0,0.1,0.02)) +#,expand=c(0,0)) +
+  theme(legend.position=c(0.8,0.7))}
 
 # plt4nam <- "benchKDxAG.pdf"
 # plot4i  <- readRDS("smuf_temp_compare.rds")
