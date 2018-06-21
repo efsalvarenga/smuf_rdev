@@ -61,3 +61,4 @@ Ico*
 *.Rhistory
 *.RData
 .Rproj.user
+packrat/lib*/
