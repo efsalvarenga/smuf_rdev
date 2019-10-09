@@ -16,7 +16,6 @@ library(data.table)
 
 fontsize <- 16
 
-setwd("~/GitRepos/smuf_rdev")
 source("smuf_main-fxs.R")
 {
   # wm01_00       <- readRDS("smuf_import-complete.rds")
@@ -512,7 +511,7 @@ colnames(plot7[[3]]) <- c("CRPS","uDemand","Grouping")
 colnames(plot7[[4]]) <- c("CRPS","uDemand","Grouping")
 colnames(plot7[[5]]) <- c("CRPS","uDemand","Grouping")
 colnames(plot7[[6]]) <- c("CRPS","uDemand","Grouping")
-plot7    <- rbind(plot7[[2]],plot7[[3]],plot7[[4]],plot7[[5]],plot7[[6]],make.row.names = FALSE)
+plot7    <- rbind(plot7[[2]],plot7[[3]],plot7[[4]],plot7[[5]],make.row.names = FALSE)
 plot7$CRPS <- as.numeric(as.character(plot7$CRPS))
 plot7$uDemand <- as.numeric(as.character(plot7$uDemand))
 ggplot7  <- ggplot(plot7, aes(CRPS,uDemand, color=Grouping, shape=Grouping)) + geom_point() +
@@ -549,7 +548,7 @@ colnames(plot8[[3]]) <- c("CRPS","uDemand","Grouping")
 colnames(plot8[[4]]) <- c("CRPS","uDemand","Grouping")
 colnames(plot8[[5]]) <- c("CRPS","uDemand","Grouping")
 colnames(plot8[[6]]) <- c("CRPS","uDemand","Grouping")
-plot8    <- rbind(plot8[[2]],plot8[[3]],plot8[[4]],plot8[[5]],plot8[[6]],make.row.names = FALSE)
+plot8    <- rbind(plot8[[2]],plot8[[3]],plot8[[4]],plot8[[5]],make.row.names = FALSE)
 plot8$CRPS <- as.numeric(as.character(plot8$CRPS))
 plot8$uDemand <- as.numeric(as.character(plot8$uDemand))
 ggplot8  <- ggplot(plot8, aes(CRPS,uDemand, color=Grouping, shape=Grouping)) + geom_point() +
